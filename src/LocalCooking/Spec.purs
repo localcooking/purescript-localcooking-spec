@@ -1,0 +1,2 @@
+module LocalCooking.Spec where
+
