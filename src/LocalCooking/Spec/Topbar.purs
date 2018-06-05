@@ -5,8 +5,7 @@ import LocalCooking.Global.Links.Class
 import LocalCooking.Global.User.Class
   (class UserDetails, getEmailAddress)
 import LocalCooking.Common.AccessToken.Auth (AuthToken)
-import LocalCooking.Common.User.Password (HashedPassword)
-import LocalCooking.Semantics.Common (Login (..))
+import LocalCooking.Semantics.Common (Login)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn (AuthTokenInitInLogin))
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
 
@@ -17,7 +16,6 @@ import Data.URI.Location (Location, class ToLocation, toLocation)
 import Data.UUID (GENUUID)
 import Data.Maybe (Maybe (..))
 import Data.Lens (Lens', Prism', lens, prism')
-import Text.Email.Validate (EmailAddress)
 import Text.Email.Validate as Email
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff (Eff)
