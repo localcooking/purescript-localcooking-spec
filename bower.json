@@ -9,7 +9,8 @@
   "dependencies": {
     "purescript-prelude": "^3.2.0",
     "purescript-material-ui": "git://github.com/athanclark/purescript-material-ui.git#ec9b763f41f67846aeafe6352bfac26f5a9a4de0",
-    "purescript-localcooking-shared": "git@git.localcooking.com:localcooking/purescript-localcooking-shared.git#acce9f04e55bc7235562dd3e311a0a63f2751d3b",
+    "purescript-localcooking-shared": "git@git.localcooking.com:localcooking/purescript-localcooking-shared.git#0239f390b6735412c073fe923f34cee522af78d2",
+    "purescript-localcooking-dependencies": "git@git.localcooking.com:localcooking/purescript-localcooking-dependencies.git#cc892dfd7ea4ebd28b9fa455b0993674cc6bc4c3",
     "purescript-react": "^5.1.0",
     "purescript-thermite": "git://github.com/jvliwanag/purescript-thermite.git#94299d6832d92f14bef029f35d07bd5e8b062e05",
     "purescript-react-queue": "^0.0.5",
@@ -19,6 +20,9 @@
     "purescript-psci-support": "^3.0.0"
   },
   "resolutions": {
-    "purescript-arraybuffer-types": "2.x"
+    "purescript-arraybuffer-types": "2.x",
+    "purescript-uri": "dd81f396694361a41ea638b217265361a27b2f28",
+    "purescript-pathy": "9d72b13921c511ebf5b66a87beeed488c5481ec5",
+    "purescript-uuid": "2e563284ee5c41d75bf9010de3c4cded9f0223db"
   }
 }
