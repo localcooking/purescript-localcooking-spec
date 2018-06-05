@@ -1,4 +1,4 @@
-module LocalCooking.Spec.Params where
+module LocalCooking.Spec.Types.Params where
 
 import LocalCooking.Common.AccessToken.Auth (AuthToken)
 

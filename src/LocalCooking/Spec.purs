@@ -1,9 +1,9 @@
 module LocalCooking.Spec where
 
 import LocalCooking.Global.Error (GlobalError)
--- import LocalCooking.Spec.Topbar (topbar)
-import LocalCooking.Spec.Env (Env)
-import LocalCooking.Spec.Params
+import LocalCooking.Spec.Topbar (topbar)
+import LocalCooking.Spec.Types.Env (Env)
+import LocalCooking.Spec.Types.Params
   ( LocalCookingParams, LocalCookingState, LocalCookingAction
   , performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
 import LocalCooking.Dependencies (DependenciesQueues)
@@ -121,10 +121,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
       . LocalCookingParams siteLinks userDetails (Effects eff)
      -> { env                 :: Env
         , globalErrorQueue    :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
-        -- , initFormDataRef     :: Ref (Maybe FacebookLoginUnsavedFormData)
-        -- How could int form data be provided to components purely? Queue?
         , dependenciesQueues  :: DependenciesQueues siteQueues (Effects eff)
-        -- FIXME rename to DependenciesQueues
         , authTokenInitIn     :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , authTokenDeltaIn    :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
         -- FIXME ambiguate dependencies APIs
@@ -157,11 +154,11 @@ spec
   params@{siteLinks,authTokenSignal}
   { env
   , globalErrorQueue
-  , dependenciesQueues  -- : dependencies@{authTokenQueues:{deltaIn: authTokenQueuesDeltaIn}}
+  , dependenciesQueues
   , authTokenInitIn
   , authTokenDeltaIn
   -- , dialog
-  , templateArgs -- : templateArgs@{palette,content,userDetails}
+  , templateArgs
   } = T.simpleSpec performAction render
   where
     performAction = performActionLocalCooking getLCState
@@ -239,12 +236,9 @@ app :: forall eff siteLinks userDetailsLinks userDetails siteQueues
      . LocalCookingParams siteLinks userDetails (Effects eff)
     -> { env                  :: Env
        , globalErrorQueue     :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
-       -- FIXME semantics for global error messages? Then deps could error, while
        -- template links them
        -- , loginCloseQueue      :: One.Queue (write :: WRITE) (Effects eff) Unit
        -- FIXME this is fucking weird ^
-       -- , initFormDataRef      :: Ref (Maybe FacebookLoginUnsavedFormData)
-       -- FIXME maybe some kind of queue to supply form data to specific component
        , dependenciesQueues :: DependenciesQueues siteQueues (Effects eff)
        -- FIXME TODO restrict authTokenQueues from being visible
        , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit

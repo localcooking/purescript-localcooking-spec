@@ -1,4 +1,4 @@
-module LocalCooking.Spec.Env where
+module LocalCooking.Spec.Types.Env where
 
 import LocalCooking.Common.User.Password (HashedPassword)
 import Facebook.State (FacebookLoginUnsavedFormData)
