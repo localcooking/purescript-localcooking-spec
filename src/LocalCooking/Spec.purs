@@ -15,7 +15,7 @@ import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Semantics.Common (Login)
 import LocalCooking.Common.User.Password (HashedPassword)
--- import LocalCooking.Spec.Content (content)
+import LocalCooking.Spec.Content (content)
 -- import LocalCooking.Spec.Content.Register (register)
 -- import LocalCooking.Spec.Content.UserDetails.Security (security)
 -- import Facebook.State (FacebookLoginUnsavedFormData)
@@ -60,7 +60,7 @@ import MaterialUI.CssBaseline (cssBaseline)
 import DOM (DOM)
 -- import DOM.HTML.Types (HISTORY)
 -- import DOM.HTML.Window.Extra (WindowSize (Laptop))
--- import Browser.WebStorage (WEB_STORAGE)
+import Browser.WebStorage (WEB_STORAGE)
 import Crypto.Scrypt (SCRYPT)
 
 import Queue.Types (writeOnly, readOnly)
@@ -90,7 +90,7 @@ type Effects eff =
   -- , history    :: HISTORY
   , now        :: NOW
   -- , timer      :: TIMER
-  -- , webStorage :: WEB_STORAGE
+  , webStorage :: WEB_STORAGE
   -- , console    :: CONSOLE
   , scrypt     :: SCRYPT
   | eff)
@@ -159,15 +159,25 @@ spec
         , imageSrc: templateArgs.topbar.imageSrc
         , buttons: templateArgs.topbar.buttons
         }
-      ] -- <> content params
-           -- { development
-           -- , env
-           -- , errorMessageQueue
-           -- , dep
-           -- }
-        <> dialogs
+      , content
+        params
+        { env
+        , globalErrorQueue
+        , dependenciesQueues
+        , authTokenInitIn
+        , authTokenDeltaIn
+        , dialogQueues
+        , templateArgs:
+          { content: templateArgs.content
+          , userDetails: templateArgs.userDetails
+          , palette: templateArgs.palette
+          , extendedNetwork: templateArgs.extendedNetwork
+          }
+        }
+      ] <> dialogs
            params
-           { dialogQueues
+           { env
+           , dialogQueues
            , dependencies:
              { passwordVerifyUnauthQueues:
                 dependenciesQueues.validateQueues.passwordVerifyUnauthQueues
@@ -175,7 +185,6 @@ spec
                 dependenciesQueues.validateQueues.passwordVerifyQueues
              }
            , globalErrorQueue: writeOnly globalErrorQueue
-           , env
            }
         <>
       [ leftMenu

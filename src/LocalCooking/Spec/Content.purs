@@ -81,13 +81,13 @@ type Effects eff =
   ( ref        :: REF
   , exception  :: EXCEPTION
   , uuid       :: GENUUID
-  , dom        :: DOM
-  , history    :: HISTORY
-  , now        :: NOW
-  , timer      :: TIMER
+  -- , dom        :: DOM
+  -- , history    :: HISTORY
+  -- , now        :: NOW
+  -- , timer      :: TIMER
   , webStorage :: WEB_STORAGE
-  , console    :: CONSOLE
-  , scrypt     :: SCRYPT
+  -- , console    :: CONSOLE
+  -- , scrypt     :: SCRYPT
   | eff)
 
 getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
