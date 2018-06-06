@@ -8,7 +8,7 @@ import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Types.Params
   ( LocalCookingParams, LocalCookingState, LocalCookingAction
   , performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
-import LocalCooking.Spec.Dialogs (dialogs)
+import LocalCooking.Spec.Dialogs (AllDialogs, dialogs)
 import LocalCooking.Spec.Snackbar (messages)
 import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
 import LocalCooking.Dependencies (DependenciesQueues)
@@ -116,18 +116,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         , authTokenInitIn     :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , authTokenDeltaIn    :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
         -- FIXME ambiguate dependencies APIs
-        , dialogQueues ::
-          { login ::
-            { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
-            , closeQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
-            }
-          , authenticate ::
-            { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
-            }
-          , privacyPolicy ::
-            { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-            }
-          }
+        , dialogQueues :: AllDialogs (Effects eff)
         , templateArgs ::
           { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
           , topbar ::

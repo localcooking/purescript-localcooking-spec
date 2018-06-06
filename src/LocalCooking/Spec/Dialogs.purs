@@ -38,22 +38,25 @@ type Effects eff =
 
 
 
+type AllDialogs eff = 
+  { login ::
+    { openQueue :: OneIO.IOQueues eff Unit (Maybe Login)
+    , closeQueue :: One.Queue (write :: WRITE) eff Unit
+    }
+  , authenticate ::
+    { openQueue :: OneIO.IOQueues eff Unit (Maybe HashedPassword)
+    }
+  , privacyPolicy ::
+    { openQueue :: OneIO.IOQueues eff Unit (Maybe Unit)
+    }
+  }
+
+
 dialogs :: forall eff siteLinks userDetails userDetailsLinks
          . LocalCookingSiteLinks siteLinks userDetailsLinks
         => ToLocation siteLinks
         => LocalCookingParams siteLinks userDetails (Effects eff)
-        -> { dialogQueues ::
-             { login ::
-               { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
-               , closeQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
-               }
-             , authenticate ::
-               { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
-               }
-             , privacyPolicy ::
-               { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-               }
-             }
+        -> { dialogQueues :: AllDialogs (Effects eff)
            , dependencies ::
              { passwordVerifyUnauthQueues :: PasswordVerifyUnauthSparrowClientQueues (Effects eff)
              , passwordVerifyQueues :: PasswordVerifySparrowClientQueues (Effects eff)

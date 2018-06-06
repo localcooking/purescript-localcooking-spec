@@ -11,6 +11,7 @@
     "purescript-material-ui": "git://github.com/athanclark/purescript-material-ui.git#ec9b763f41f67846aeafe6352bfac26f5a9a4de0",
     "purescript-localcooking-dependencies": "git@git.localcooking.com:localcooking/purescript-localcooking-dependencies.git#a3c9f8299b0d6c035c014019a4e3210c4a0c9a53",
     "purescript-react": "^5.1.0",
+    "purescript-webstorage": "^4.0.0",
     "purescript-thermite": "git://github.com/jvliwanag/purescript-thermite.git#94299d6832d92f14bef029f35d07bd5e8b062e05",
     "purescript-react-queue": "^0.0.5",
     "purescript-console": "^3.0.0"
