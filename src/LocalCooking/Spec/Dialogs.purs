@@ -1,13 +1,17 @@
 module LocalCooking.Spec.Dialogs where
 
 import LocalCooking.Spec.Dialogs.Login (loginDialog)
+import LocalCooking.Spec.Dialogs.Authenticate (authenticateDialog)
+import LocalCooking.Spec.Dialogs.PrivacyPolicy (privacyPolicyDialog)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Semantics.Common (Login)
 import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
+import LocalCooking.Common.User.Password (HashedPassword)
 import LocalCooking.Dependencies.Validate
-  (PasswordVerifyUnauthSparrowClientQueues)
+  ( PasswordVerifyUnauthSparrowClientQueues
+  , PasswordVerifySparrowClientQueues)
 
 import Prelude
 import Data.Maybe (Maybe)
@@ -43,9 +47,16 @@ dialogs :: forall eff siteLinks userDetails userDetailsLinks
                { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
                , closeQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
                }
+             , authenticate ::
+               { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
+               }
+             , privacyPolicy ::
+               { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
+               }
              }
            , dependencies ::
              { passwordVerifyUnauthQueues :: PasswordVerifyUnauthSparrowClientQueues (Effects eff)
+             , passwordVerifyQueues :: PasswordVerifySparrowClientQueues (Effects eff)
              }
            , globalErrorQueue :: One.Queue (write :: WRITE) (Effects eff) GlobalError
            , env :: Env
@@ -59,5 +70,16 @@ dialogs params {dialogQueues,dependencies,globalErrorQueue,env} =
     , passwordVerifyUnauthQueues: dependencies.passwordVerifyUnauthQueues
     , globalErrorQueue
     , env
+    }
+  , authenticateDialog
+    params
+    { authenticateDialogQueue: dialogQueues.authenticate.openQueue
+    , passwordVerifyQueues: dependencies.passwordVerifyQueues
+    , globalErrorQueue
+    , env
+    }
+  , privacyPolicyDialog
+    params
+    { privacyPolicyDialogQueue: dialogQueues.privacyPolicy.openQueue
     }
   ]

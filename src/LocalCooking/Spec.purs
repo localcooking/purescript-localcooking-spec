@@ -10,23 +10,14 @@ import LocalCooking.Spec.Types.Params
   , performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
 import LocalCooking.Spec.Dialogs (dialogs)
 import LocalCooking.Spec.Snackbar (messages)
+import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Semantics.Common (Login)
+import LocalCooking.Common.User.Password (HashedPassword)
 -- import LocalCooking.Spec.Content (content)
 -- import LocalCooking.Spec.Content.Register (register)
 -- import LocalCooking.Spec.Content.UserDetails.Security (security)
-import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
--- import LocalCooking.Spec.Snackbar (messages, SnackbarMessage (..), RedirectError (RedirectLogout))
--- import LocalCooking.Types.Env (Env)
--- import LocalCooking.Types.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
--- import LocalCooking.Links.Class (registerLink, rootLink, userDetailsLink, getUserDetailsLink, userDetailsGeneralLink, userDetailsSecurityLink, class LocalCookingSiteLinks, class ToLocation)
--- import LocalCooking.Dependencies.AuthToken
---   ( AuthTokenSparrowClientQueues
---   , AuthTokenInitIn (..), AuthTokenInitOut (..), AuthTokenDeltaIn (..), AuthTokenDeltaOut (..)
---   , PreliminaryAuthToken (..), AuthTokenFailure (AuthTokenLoginFailure))
--- import LocalCooking.Dependencies (Queues)
--- import LocalCooking.User.Class (class UserDetails)
 -- import Facebook.State (FacebookLoginUnsavedFormData)
 
 -- import Sparrow.Client.Queue (callSparrowClientQueues)
@@ -130,12 +121,13 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
             { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
             , closeQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
             }
+          , authenticate ::
+            { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
+            }
+          , privacyPolicy ::
+            { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
+            }
           }
-          -- { loginQueue         :: OneIO.IOQueues (Effects eff) Unit (Maybe {email :: EmailAddress, password :: HashedPassword})
-          -- , loginCloseQueue    :: One.Queue (write :: WRITE) (Effects eff) Unit
-          -- , authenticateQueue  :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
-          -- , privacyPolicyQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-          -- }
         , templateArgs ::
           { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
           , topbar ::
@@ -156,7 +148,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         }
      -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
 spec
-  params -- @{siteLinks,authTokenSignal}
+  params
   { env
   , globalErrorQueue
   , dependenciesQueues
@@ -189,7 +181,9 @@ spec
            { dialogQueues
            , dependencies:
              { passwordVerifyUnauthQueues:
-               dependenciesQueues.validateQueues.passwordVerifyUnauthQueues
+                dependenciesQueues.validateQueues.passwordVerifyUnauthQueues
+             , passwordVerifyQueues:
+                dependenciesQueues.validateQueues.passwordVerifyQueues
              }
            , globalErrorQueue: writeOnly globalErrorQueue
            , env
@@ -284,12 +278,13 @@ app
               { openQueue: loginDialogQueue
               , closeQueue: dialogQueues.login.closeQueue
               }
+            , authenticate:
+              { openQueue: authenticateDialogQueue
+              }
+            , privacyPolicy:
+              { openQueue: privacyPolicyDialogQueue
+              }
             }
-            -- { loginQueue: loginDialogQueue
-            -- , loginCloseQueue
-            -- , authenticateQueue: authenticateDialogQueue
-            -- , privacyPolicyQueue: privacyPolicyDialogQueue
-            -- }
           , templateArgs
           }
         ) (initialState (unsafePerformEff (initLocalCookingState params)))
@@ -307,8 +302,8 @@ app
     loginDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
     loginDialogQueue = unsafePerformEff OneIO.newIOQueues
 
-    -- authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
-    -- authenticateDialogQueue = unsafePerformEff OneIO.newIOQueues
+    authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
+    authenticateDialogQueue = unsafePerformEff OneIO.newIOQueues
 
-    -- privacyPolicyDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-    -- privacyPolicyDialogQueue = unsafePerformEff OneIO.newIOQueues
+    privacyPolicyDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
+    privacyPolicyDialogQueue = unsafePerformEff OneIO.newIOQueues
