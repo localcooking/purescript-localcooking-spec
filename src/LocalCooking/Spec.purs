@@ -9,16 +9,14 @@ import LocalCooking.Spec.Types.Params
   ( LocalCookingParams, LocalCookingState, LocalCookingAction
   , performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
 import LocalCooking.Spec.Dialogs (dialogs)
+import LocalCooking.Spec.Snackbar (messages)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Semantics.Common (Login)
 -- import LocalCooking.Spec.Content (content)
 -- import LocalCooking.Spec.Content.Register (register)
 -- import LocalCooking.Spec.Content.UserDetails.Security (security)
--- import LocalCooking.Spec.Dialogs.Login (loginDialog)
--- import LocalCooking.Spec.Dialogs.Authenticate (authenticateDialog)
--- import LocalCooking.Spec.Dialogs.PrivacyPolicy (privacyPolicyDialog)
--- import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
+import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
 -- import LocalCooking.Spec.Snackbar (messages, SnackbarMessage (..), RedirectError (RedirectLogout))
 -- import LocalCooking.Types.Env (Env)
 -- import LocalCooking.Types.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
@@ -47,7 +45,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
--- import Control.Monad.Eff.Now (NOW)
+import Control.Monad.Eff.Now (NOW)
 -- import Control.Monad.Eff.Timer (TIMER, setTimeout)
 -- import Control.Monad.Base (liftBase)
 
@@ -68,11 +66,11 @@ import MaterialUI.CssBaseline (cssBaseline)
 -- import MaterialUI.ListItem (listItem)
 -- import MaterialUI.ListItemText (listItemText)
 -- import MaterialUI.Types (createStyles)
--- import DOM (DOM)
+import DOM (DOM)
 -- import DOM.HTML.Types (HISTORY)
 -- import DOM.HTML.Window.Extra (WindowSize (Laptop))
 -- import Browser.WebStorage (WEB_STORAGE)
--- import Crypto.Scrypt (SCRYPT)
+import Crypto.Scrypt (SCRYPT)
 
 import Queue.Types (writeOnly, readOnly)
 import Queue (READ, WRITE)
@@ -97,13 +95,13 @@ type Effects eff =
   ( ref        :: REF
   , exception  :: EXCEPTION
   , uuid       :: GENUUID
-  -- , dom        :: DOM
+  , dom        :: DOM
   -- , history    :: HISTORY
-  -- , now        :: NOW
+  , now        :: NOW
   -- , timer      :: TIMER
   -- , webStorage :: WEB_STORAGE
   -- , console    :: CONSOLE
-  -- , scrypt     :: SCRYPT
+  , scrypt     :: SCRYPT
   | eff)
 
 getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
@@ -186,37 +184,26 @@ spec
            -- , errorMessageQueue
            -- , dep
            -- }
-      --   <>
-      -- [ -- FIXME pack dialogs into a single component
-      --   loginDialog
-      --   params
-      --   { loginDialogQueue: dialog.loginQueue
-      --   , loginCloseQueue: dialog.loginCloseQueue
-      --   , passwordVerifyQueues: dependenciesQueues.passwordVerifyQueues
-      --   , errorMessageQueue: writeOnly errorMessageQueue
-      --   , toRegister: siteLinks registerLink
-      --   , env
-      --   }
-      -- , authenticateDialog
-      --   params
-      --   { authenticateDialogQueue: dialog.authenticateQueue
-      --   , passwordVerifyQueues: dependenciesQueues.passwordVerifyQueues
-      --   , errorMessageQueue: writeOnly errorMessageQueue
-      --   , env
-      --   }
-      -- , privacyPolicyDialog
-      --   params
-      --   { privacyPolicyDialogQueue: dialog.privacyPolicyQueue
-      --   }
-      -- , leftMenu
-      --   params
-      --   { mobileDrawerOpenSignal: readOnly mobileMenuButtonTrigger
-      --   , buttons: templateArgs.leftDrawer.buttons
-      --   }
-      -- , messages
-      --   { errorMessageQueue: readOnly errorMessageQueue
-      --   }
-      -- ]
+        <> dialogs
+           params
+           { dialogQueues
+           , dependencies:
+             { passwordVerifyUnauthQueues:
+               dependenciesQueues.validateQueues.passwordVerifyUnauthQueues
+             }
+           , globalErrorQueue: writeOnly globalErrorQueue
+           , env
+           }
+        <>
+      [ leftMenu
+        params
+        { mobileDrawerOpenTrigger: readOnly mobileMenuButtonTrigger
+        , buttons: templateArgs.leftDrawer.buttons
+        }
+      , messages
+        { globalErrorQueue: readOnly globalErrorQueue
+        }
+      ]
       where
         template xs =
           [ cssBaseline
