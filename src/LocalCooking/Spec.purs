@@ -1,6 +1,8 @@
 module LocalCooking.Spec where
 
 import LocalCooking.Global.Error (GlobalError)
+import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
+import LocalCooking.Global.User.Class (class UserDetails)
 import LocalCooking.Spec.Topbar (topbar)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Types.Params
@@ -9,6 +11,7 @@ import LocalCooking.Spec.Types.Params
 import LocalCooking.Spec.Dialogs (dialogs)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
+import LocalCooking.Semantics.Common (Login)
 -- import LocalCooking.Spec.Content (content)
 -- import LocalCooking.Spec.Content.Register (register)
 -- import LocalCooking.Spec.Content.UserDetails.Security (security)
@@ -31,7 +34,7 @@ import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 -- import Sparrow.Client.Queue (callSparrowClientQueues)
 
 import Prelude
-import Data.URI.Location (Location)
+import Data.URI.Location (Location, class ToLocation)
 import Data.UUID (GENUUID)
 import Data.Maybe (Maybe (..))
 -- import Data.Either (Either (..))
@@ -111,25 +114,30 @@ getLCAction = prism' id Just
 
 
 spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
-      -- . LocalCookingSiteLinks siteLinks userDetailsLinks
-     -- => Eq siteLinks
-     -- => ToLocation siteLinks
-     -- => UserDetails userDetails
+      . LocalCookingSiteLinks siteLinks userDetailsLinks
+     => Eq siteLinks
+     => ToLocation siteLinks
+     => UserDetails userDetails
      -- => Generic siteLinks
      -- => Generic userDetails
-      . LocalCookingParams siteLinks userDetails (Effects eff)
+     => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { env                 :: Env
         , globalErrorQueue    :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
         , dependenciesQueues  :: DependenciesQueues siteQueues (Effects eff)
         , authTokenInitIn     :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , authTokenDeltaIn    :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
         -- FIXME ambiguate dependencies APIs
-        -- , dialog ::
-        --   { loginQueue         :: OneIO.IOQueues (Effects eff) Unit (Maybe {email :: EmailAddress, password :: HashedPassword})
-        --   , loginCloseQueue    :: One.Queue (write :: WRITE) (Effects eff) Unit
-        --   , authenticateQueue  :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
-        --   , privacyPolicyQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-        --   }
+        , dialogQueues ::
+          { login ::
+            { openQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
+            , closeQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
+            }
+          }
+          -- { loginQueue         :: OneIO.IOQueues (Effects eff) Unit (Maybe {email :: EmailAddress, password :: HashedPassword})
+          -- , loginCloseQueue    :: One.Queue (write :: WRITE) (Effects eff) Unit
+          -- , authenticateQueue  :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
+          -- , privacyPolicyQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
+          -- }
         , templateArgs ::
           { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
           , topbar ::
@@ -150,29 +158,29 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         }
      -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
 spec
-  params@{siteLinks,authTokenSignal}
+  params -- @{siteLinks,authTokenSignal}
   { env
   , globalErrorQueue
   , dependenciesQueues
   , authTokenInitIn
   , authTokenDeltaIn
-  -- , dialog
+  , dialogQueues
   , templateArgs
   } = T.simpleSpec performAction render
   where
     performAction = performActionLocalCooking getLCState
 
     render :: T.Render (State siteLinks userDetails) Unit (Action siteLinks userDetails)
-    render dispatch props state children = template [] -- $
-      -- [ topbar
-      --   params
-      --   { loginQueue: dialog.loginQueue
-      --   , authTokenInitIn
-      --   , mobileMenuButtonTrigger: writeOnly mobileMenuButtonTrigger
-      --   , imageSrc: templateArgs.topbar.imageSrc
-      --   , buttons: templateArgs.topbar.buttons
-      --   }
-      -- ] -- <> content params
+    render dispatch props state children = template $
+      [ topbar
+        params
+        { loginDialogQueue: dialogQueues.login.openQueue
+        , authTokenInitIn
+        , mobileMenuButtonTrigger: writeOnly mobileMenuButtonTrigger
+        , imageSrc: templateArgs.topbar.imageSrc
+        , buttons: templateArgs.topbar.buttons
+        }
+      ] -- <> content params
            -- { development
            -- , env
            -- , errorMessageQueue
@@ -220,24 +228,27 @@ spec
               (R.div [] xs)
           ]
 
-        -- mobileMenuButtonTrigger :: One.Queue (read :: READ, write :: WRITE) (Effects eff) Unit
-        -- mobileMenuButtonTrigger = unsafePerformEff One.newQueue
+        mobileMenuButtonTrigger :: One.Queue (read :: READ, write :: WRITE) (Effects eff) Unit
+        mobileMenuButtonTrigger = unsafePerformEff One.newQueue
 
 
 
 app :: forall eff siteLinks userDetailsLinks userDetails siteQueues
-     -- . LocalCookingSiteLinks siteLinks userDetailsLinks
-    -- => Eq siteLinks
-    -- => ToLocation siteLinks
-    -- => UserDetails userDetails
+     . LocalCookingSiteLinks siteLinks userDetailsLinks
+    => Eq siteLinks
+    => ToLocation siteLinks
+    => UserDetails userDetails
     -- => Generic siteLinks
     -- => Generic userDetails
-     . LocalCookingParams siteLinks userDetails (Effects eff)
+    => LocalCookingParams siteLinks userDetails (Effects eff)
     -> { env                  :: Env
        , globalErrorQueue     :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
        -- template links them
-       -- , loginCloseQueue      :: One.Queue (write :: WRITE) (Effects eff) Unit
-       -- FIXME this is fucking weird ^
+       , dialogQueues ::
+         { login ::
+           { closeQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
+           }
+         }
        , dependenciesQueues :: DependenciesQueues siteQueues (Effects eff)
        -- FIXME TODO restrict authTokenQueues from being visible
        , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit
@@ -266,7 +277,7 @@ app
   params
   { env
   , globalErrorQueue
-  -- , loginCloseQueue
+  , dialogQueues
   , dependenciesQueues
   , authTokenInitIn
   , authTokenDeltaIn
@@ -281,12 +292,17 @@ app
           , dependenciesQueues
           , authTokenInitIn
           , authTokenDeltaIn
-          -- , dialog:
-          --   { loginQueue: loginDialogQueue
-          --   , loginCloseQueue
-          --   , authenticateQueue: authenticateDialogQueue
-          --   , privacyPolicyQueue: privacyPolicyDialogQueue
-          --   }
+          , dialogQueues:
+            { login:
+              { openQueue: loginDialogQueue
+              , closeQueue: dialogQueues.login.closeQueue
+              }
+            }
+            -- { loginQueue: loginDialogQueue
+            -- , loginCloseQueue
+            -- , authenticateQueue: authenticateDialogQueue
+            -- , privacyPolicyQueue: privacyPolicyDialogQueue
+            -- }
           , templateArgs
           }
         ) (initialState (unsafePerformEff (initLocalCookingState params)))
@@ -299,10 +315,10 @@ app
             reactSpec
 
   in  {spec: reactSpec', dispatcher}
-  -- where
+  where
     -- FIXME dialog queues - would there be any spawned by a dep's async incoming?
-    -- loginDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe {email :: EmailAddress, password :: HashedPassword})
-    -- loginDialogQueue = unsafePerformEff OneIO.newIOQueues
+    loginDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
+    loginDialogQueue = unsafePerformEff OneIO.newIOQueues
 
     -- authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
     -- authenticateDialogQueue = unsafePerformEff OneIO.newIOQueues
