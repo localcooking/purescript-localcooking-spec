@@ -4,7 +4,6 @@ import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Common.Pending (pending)
 import LocalCooking.Spec.Common.Form.Submit as Submit
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingAction, LocalCookingState, performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
--- import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 
 import Prelude

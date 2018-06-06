@@ -4,6 +4,7 @@ import LocalCooking.Spec.Dialogs.Generic (genericDialog)
 import LocalCooking.Spec.Common.Form.Email as Email
 import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Types.Env (Env)
+import LocalCooking.Spec.Misc.Social (mkSocialFab)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error
   ( GlobalError (GlobalErrorAuthFailure)
@@ -30,7 +31,6 @@ import Control.Monad.Eff.Unsafe (unsafeCoerceEff, unsafePerformEff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log)
 
 import React as R
 import React.DOM as R
@@ -59,7 +59,6 @@ type Effects eff =
   , uuid      :: GENUUID
   , exception :: EXCEPTION
   , scrypt    :: SCRYPT
-  , console   :: CONSOLE
   , dom       :: DOM
   | eff)
 
@@ -68,22 +67,20 @@ loginDialog :: forall eff siteLinks userDetails userDetailsLinks
              . LocalCookingSiteLinks siteLinks userDetailsLinks
             => ToLocation siteLinks
             => LocalCookingParams siteLinks userDetails (Effects eff)
-            -> { loginDialogQueue     :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
-               , loginCloseQueue      :: One.Queue (write :: WRITE) (Effects eff) Unit
+            -> { loginDialogQueue           :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
+               , loginCloseQueue            :: One.Queue (write :: WRITE) (Effects eff) Unit
                , passwordVerifyUnauthQueues :: PasswordVerifyUnauthSparrowClientQueues (Effects eff)
-               , globalErrorQueue     :: One.Queue (write :: WRITE) (Effects eff) GlobalError
-               , env                  :: Env
-               , toRegister           :: Eff (Effects eff) Unit
+               , globalErrorQueue           :: One.Queue (write :: WRITE) (Effects eff) GlobalError
+               , env                        :: Env
                }
             -> R.ReactElement
 loginDialog
-  params@{toURI,currentPageSignal}
+  params@{toURI,currentPageSignal,siteLinks}
   { loginDialogQueue
   , loginCloseQueue
   , passwordVerifyUnauthQueues
   , globalErrorQueue
   , env: {facebookClientId, salt}
-  , toRegister
   } =
   genericDialog
   params
@@ -97,7 +94,7 @@ loginDialog
           preventDefault e
           unsafeCoerceEff $ do
             close
-            toRegister
+            siteLinks registerLink
       , href: URI.print $ toURI $ toLocation $ registerLink :: siteLinks
       } [R.text "Register"]
     ]
@@ -141,15 +138,15 @@ loginDialog
             , errorQueue: passwordErrorQueue
             }
           , R.div [RP.style {display: "flex", justifyContent: "space-evenly", paddingTop: "2em"}] $
-              [ mkFab facebookClientId "#3b5998" "#1e3f82" facebookIcon $ Just $ FacebookLoginLink
+              [ mkSocialFab facebookClientId "#3b5998" "#1e3f82" facebookIcon $ Just $ FacebookLoginLink
                 { redirectURL: toURI (toLocation FacebookLoginReturn)
                 , state: FacebookLoginState
                   { origin: toLocation $ unsafePerformEff $ IxSignal.get currentPageSignal
                   , formData: Nothing
                   }
                 }
-              , mkFab facebookClientId "#1da1f3" "#0f8cdb" twitterIcon Nothing
-              , mkFab facebookClientId "#dd4e40" "#c13627" googleIcon Nothing
+              , mkSocialFab facebookClientId "#1da1f3" "#0f8cdb" twitterIcon Nothing
+              , mkSocialFab facebookClientId "#dd4e40" "#c13627" googleIcon Nothing
               ]
           ]
     , obtain: do
@@ -161,20 +158,16 @@ loginDialog
           mVerify <- OneIO.callAsync
             passwordVerifyUnauthQueues
             (PasswordVerifyUnauth {email,password: hashedPassword})
-          case mVerify of -- FIXME nonexistent auth token error message?
+          case mVerify of
             Just JSONUnit -> do
-              pure $ Just $ Login {email,password: hashedPassword} -- FIXME delay until other queues are finished - user details, auth token, etc.
-            _ -> do
-              -- liftEff $ case mVerify of
-              --   Nothing ->
-              --     One.putQueue globalErrorQueue (SnackbarMessageAuthFailure AuthExistsFailure)
-              --   _ ->
+              pure $ Just $ Login {email,password: hashedPassword}
+            Nothing -> do
               liftEff $ do
                 One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthTokenLoginFailure)
                 One.putQueue passwordErrorQueue unit
               pure Nothing
         _ -> do
-          liftEff $ log "bad email!" -- FIXME bug out somehow?
+          -- liftEff $ log "bad email!" -- FIXME bug out somehow?
           pure Nothing
     , reset: do
       IxSignal.set (Email.EmailPartial "") emailSignal
@@ -188,31 +181,3 @@ loginDialog
     passwordQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     passwordErrorQueue = unsafePerformEff $ writeOnly <$> One.newQueue
     setQueue = unsafePerformEff $ writeOnly <$> One.newQueue
-
-
--- | For social logins
-mkFab :: FacebookClientId -> String -> String -> R.ReactElement
-      -> Maybe FacebookLoginLink -> R.ReactElement
-mkFab facebookClientId mainColor darkColor icon mLink =
-  Button.withStyles
-    (\theme ->
-      { root: createStyles
-        { backgroundColor: mainColor
-        , color: "#ffffff"
-        , "&:hover": {backgroundColor: darkColor}
-        }
-      }
-    )
-    (\{classes} ->
-      button
-        { variant: Button.fab
-        , classes: Button.createClasses {root: classes.root}
-        , disabled: case mLink of
-          Nothing -> true
-          _ -> false
-        , href: case mLink of
-          Nothing -> ""
-          Just link -> URI.print $
-            facebookLoginLinkToURI facebookClientId link
-        } [icon]
-    )
