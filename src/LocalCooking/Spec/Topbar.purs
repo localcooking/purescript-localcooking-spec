@@ -81,22 +81,16 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
      => ToLocation siteLinks
      => UserDetails userDetails
      => LocalCookingParams siteLinks userDetails (Effects eff)
-     -> { loginQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
+     -> { loginDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
         , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , mobileMenuButtonTrigger :: Queue (write :: WRITE) (Effects eff) Unit
         , imageSrc :: Location
-        , buttons :: { toURI :: Location -> URI
-                      , siteLinks :: siteLinks -> Eff (Effects eff) Unit
-                      , currentPageSignal :: IxSignal (Effects eff) siteLinks
-                      , windowSizeSignal :: IxSignal (Effects eff) WindowSize
-                      , authTokenSignal :: IxSignal (Effects eff) (Maybe AuthToken)
-                      , userDetailsSignal :: IxSignal (Effects eff) (Maybe userDetails)
-                      } -> Array R.ReactElement
+        , buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
         }
      -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
 spec
   params
-  { loginQueue
+  { loginDialogQueue
   , authTokenInitIn
   , mobileMenuButtonTrigger
   , imageSrc
@@ -105,7 +99,7 @@ spec
   where
     performAction action props state = case action of
       AttemptLogin -> do
-        mLogin <- liftBase (OneIO.callAsync loginQueue unit)
+        mLogin <- liftBase (OneIO.callAsync loginDialogQueue unit)
         case mLogin of
           Nothing -> pure unit
           Just login -> liftEff $ authTokenInitIn $ AuthTokenInitInLogin login
@@ -169,21 +163,15 @@ topbar :: forall eff siteLinks userDetailsLinks userDetails
        => ToLocation siteLinks
        => UserDetails userDetails
        => LocalCookingParams siteLinks userDetails (Effects eff)
-       -> { loginQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
+       -> { loginDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
           , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit
           , mobileMenuButtonTrigger :: Queue (write :: WRITE) (Effects eff) Unit
           , imageSrc :: Location
-          , buttons :: { toURI :: Location -> URI
-                        , siteLinks :: siteLinks -> Eff (Effects eff) Unit
-                        , currentPageSignal :: IxSignal (Effects eff) siteLinks
-                        , windowSizeSignal :: IxSignal (Effects eff) WindowSize
-                        , authTokenSignal :: IxSignal (Effects eff) (Maybe AuthToken)
-                        , userDetailsSignal :: IxSignal (Effects eff) (Maybe userDetails)
-                        } -> Array R.ReactElement
+          , buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
           } -> R.ReactElement
 topbar
   params
-  { loginQueue
+  { loginDialogQueue
   , authTokenInitIn
   , mobileMenuButtonTrigger
   , imageSrc
@@ -192,7 +180,7 @@ topbar
   let {spec:reactSpec,dispatcher} = T.createReactSpec
         ( spec
           params
-          { loginQueue -- openLogin
+          { loginDialogQueue
           , authTokenInitIn
           , mobileMenuButtonTrigger
           , imageSrc

@@ -6,6 +6,7 @@ import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Types.Params
   ( LocalCookingParams, LocalCookingState, LocalCookingAction
   , performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
+import LocalCooking.Spec.Dialogs (dialogs)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 -- import LocalCooking.Spec.Content (content)
