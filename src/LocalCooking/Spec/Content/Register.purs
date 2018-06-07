@@ -5,13 +5,13 @@ import LocalCooking.Spec.Common.Form.Email as Email
 import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Common.Form.Submit as Submit
 import LocalCooking.Spec.Common.Form.ReCaptcha (reCaptcha)
-import LocalCooking.Spec.Misc.Social (mkSocialFab)
+import LocalCooking.Spec.Misc.Social (mkSocialFab, mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorRegister), RegisterError (..))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Dependencies.Common (RegisterSparrowClientQueues)
-import LocalCooking.Semantics.Common (Register (..))
+import LocalCooking.Semantics.Common (Register (..), SocialLoginForm)
 import LocalCooking.Common.User.Password (hashPassword)
 import Google.ReCaptcha (ReCaptchaResponse)
 import Facebook.Call (FacebookLoginLink (..), facebookLoginLinkToURI)
@@ -68,13 +68,13 @@ import IxQueue as IxQueue
 -- TODO bind to local cooking args
 type State =
   { rerender :: Unit
-  , fbUserId :: Maybe FacebookUserId
+  , socialLogin :: SocialLoginForm
   }
 
-initialState :: {initFbUserId :: Maybe FacebookUserId} -> State
-initialState {initFbUserId} =
+initialState :: {initSocialLogin :: SocialLoginForm} -> State
+initialState {initSocialLogin} =
   { rerender: unit
-  , fbUserId: initFbUserId
+  , socialLogin: initSocialLogin
   }
 
 data Action
@@ -237,27 +237,45 @@ spec
             , errorQueue: passwordConfirmErrorQueue
             }
           , R.div [RP.style {display: "flex", justifyContent: "space-evenly", paddingTop: "2em", paddingBottom: "2em"}] $
-              [ mkSocialFab env.facebookClientId "#3b5998" "#1e3f82" facebookIcon (isJust state.fbUserId) $
-                  Just $ FacebookLoginLink
-                  { redirectURL: params.toURI (toLocation FacebookLoginReturn)
-                  , state: FacebookLoginState
-                    { origin: toLocation $ unsafePerformEff $ IxSignal.get params.currentPageSignal
-                    , formData: Just $ FacebookLoginUnsavedFormDataRegister
-                      { email: case unsafePerformEff (IxSignal.get email.signal) of
+              mkSocialLogin params
+                { env
+                , getUnsavedFormData: do
+                    email' <- IxSignal.get email.signal
+                    emailConfirm' <- IxSignal.get emailConfirm.signal
+                    pure $ FacebookLoginUnsavedFormDataRegister
+                      { email: case email' of
                           Email.EmailPartial e -> e
                           Email.EmailBad e -> e
                           Email.EmailGood e -> Email.toString e
-                      , emailConfirm: case unsafePerformEff (IxSignal.get emailConfirm.signal) of
+                      , emailConfirm: case emailConfirm' of
                           Email.EmailPartial e -> e
                           Email.EmailBad e -> e
                           Email.EmailGood e -> Email.toString e
-                      , fbUserId: Nothing
+                      , socialLogin: state.socialLogin
                       }
-                    }
-                  }
-              , mkSocialFab env.facebookClientId "#1da1f3" "#0f8cdb" twitterIcon false Nothing
-              , mkSocialFab env.facebookClientId "#dd4e40" "#c13627" googleIcon false Nothing
-              ]
+                }
+                state.socialLogin
+              -- [ mkSocialFab env.facebookClientId "#3b5998" "#1e3f82" facebookIcon (isJust state.fbUserId) $
+              --     Just $ FacebookLoginLink
+              --     { redirectURL: params.toURI (toLocation FacebookLoginReturn)
+              --     , state: FacebookLoginState
+              --       { origin: toLocation $ unsafePerformEff $ IxSignal.get params.currentPageSignal
+              --       , formData: Just $ FacebookLoginUnsavedFormDataRegister
+              --         { email: case unsafePerformEff (IxSignal.get email.signal) of
+              --             Email.EmailPartial e -> e
+              --             Email.EmailBad e -> e
+              --             Email.EmailGood e -> Email.toString e
+              --         , emailConfirm: case unsafePerformEff (IxSignal.get emailConfirm.signal) of
+              --             Email.EmailPartial e -> e
+              --             Email.EmailBad e -> e
+              --             Email.EmailGood e -> Email.toString e
+              --         , fbUserId: Nothing
+              --         }
+              --       }
+              --     }
+              -- , mkSocialFab env.facebookClientId "#1da1f3" "#0f8cdb" twitterIcon false Nothing
+              -- , mkSocialFab env.facebookClientId "#dd4e40" "#c13627" googleIcon false Nothing
+              -- ]
           , reCaptcha
             { reCaptchaSignal
             , reCaptchaSiteKey: env.googleReCaptchaSiteKey
@@ -290,6 +308,15 @@ spec
         passwordConfirmErrorQueue = unsafePerformEff $ writeOnly <$> One.newQueue
         setQueue = unsafePerformEff $ writeOnly <$> One.newQueue
         setConfirmQueue = unsafePerformEff $ writeOnly <$> One.newQueue
+
+
+
+newtype RegisterUnsavedFormData = RegisterUnsavedFormData
+  { email :: String
+  , emailConfirm :: String
+  , socialLogin :: SocialLoginForm
+  }
+
 
 
 register :: forall eff siteLinks userDetails
