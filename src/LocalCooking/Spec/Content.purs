@@ -1,7 +1,7 @@
 module LocalCooking.Spec.Content where
 
-import LocalCooking.Spec.Content.UserDetails.Security (security)
--- import LocalCooking.Spec.Content.Register (register)
+import LocalCooking.Spec.Content.UserDetails.Security (security, SecurityUnsavedFormData)
+import LocalCooking.Spec.Content.Register (register, RegisterUnsavedFormData)
 import LocalCooking.Spec.Misc.Flags.USA (usaFlag, usaFlagViewBox)
 import LocalCooking.Spec.Misc.Flags.Colorado (coloradoFlag, coloradoFlagViewBox)
 import LocalCooking.Spec.Types.Env (Env (..))
@@ -112,6 +112,12 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         , dialogQueues :: AllDialogs (Effects eff)
         , templateArgs ::
           { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+          , security ::
+            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
+            }
+          , register ::
+            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) RegisterUnsavedFormData
+            }
           , userDetails ::
             { buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
             , content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
@@ -216,6 +222,7 @@ spec
                         , globalErrorQueue: writeOnly globalErrorQueue
                         , setUserQueues: dependenciesQueues.commonQueues.setUserQueues
                         , authenticateDialogQueue: dialogQueues.authenticate.openQueue
+                        , unsavedFormDataQueue: templateArgs.security.unsavedFormDataQueue
                         -- , initFormDataRef
                         }
                       ]
@@ -299,6 +306,12 @@ content :: forall eff siteLinks userDetailsLinks userDetails siteQueues
                 }
               , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
               , extendedNetwork :: Array R.ReactElement
+              , security ::
+                { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
+                }
+              , register ::
+                { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) RegisterUnsavedFormData
+                }
               }
            }
         -> R.ReactElement

@@ -3,6 +3,8 @@ module LocalCooking.Spec where
 import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 import LocalCooking.Global.User.Class (class UserDetails)
+import LocalCooking.Spec.Content.UserDetails.Security (SecurityUnsavedFormData)
+import LocalCooking.Spec.Content.Register (RegisterUnsavedFormData)
 import LocalCooking.Spec.Topbar (topbar)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Types.Params
@@ -132,6 +134,12 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
             }
           , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
           , extendedNetwork :: Array R.ReactElement
+          , security ::
+            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
+            }
+          , register ::
+            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) RegisterUnsavedFormData
+            }
           }
         -- FIXME rename? How could these args be described as spec arguments?
         }
@@ -172,6 +180,8 @@ spec
           , userDetails: templateArgs.userDetails
           , palette: templateArgs.palette
           , extendedNetwork: templateArgs.extendedNetwork
+          , security: templateArgs.security
+          , register: templateArgs.register
           }
         }
       ] <> dialogs
@@ -247,6 +257,12 @@ app :: forall eff siteLinks userDetailsLinks userDetails siteQueues
             }
           , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
           , extendedNetwork :: Array R.ReactElement
+          , security ::
+            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
+            }
+          , register ::
+            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) RegisterUnsavedFormData
+            }
           }
        }
     -> { spec :: R.ReactSpec Unit (State siteLinks userDetails) (Array R.ReactElement) (Effects eff)

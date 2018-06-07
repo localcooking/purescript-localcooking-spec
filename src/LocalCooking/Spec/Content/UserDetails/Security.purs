@@ -10,7 +10,7 @@ import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.Common (SetUserSparrowClientQueues)
 import LocalCooking.Dependencies.AccessToken.Generic (AccessInitIn (..))
-import LocalCooking.Semantics.Common (User (..))
+import LocalCooking.Semantics.Common (User (..), SocialLoginForm (..))
 -- import LocalCooking.Client.Dependencies.Security (SecuritySparrowClientQueues, SecurityInitIn' (..), SecurityInitOut' (..))
 -- import LocalCooking.Client.Dependencies.AccessToken.Generic (AuthInitIn (..), AuthInitOut (..))
 import Facebook.State (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataSecurity))
@@ -44,7 +44,7 @@ import Crypto.Scrypt (SCRYPT)
 
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import Queue.Types (readOnly, writeOnly)
+import Queue.Types (readOnly, writeOnly, allowReading)
 import Queue (WRITE, READ)
 import Queue.One as One
 import Queue.One.Aff as OneIO
@@ -53,18 +53,23 @@ import IxQueue as IxQueue
 
 
 
+-- TODO render social login
+
 
 type State =
   { rerender :: Unit
+  , socialLogin :: SocialLoginForm
   }
 
-initialState :: State
-initialState =
+initialState :: {initSocialLogin :: SocialLoginForm} -> State
+initialState {initSocialLogin} =
   { rerender: unit
+  , socialLogin: initSocialLogin
   }
 
 data Action
   = SubmitSecurity
+  | ReceivedUnsavedFormData SecurityUnsavedFormData
   | ReRender
 
 
@@ -85,10 +90,12 @@ spec :: forall eff siteLinks userDetails
         , email ::
           { signal        :: IxSignal (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
+          , setQueue      :: One.Queue (write :: WRITE) (Effects eff) Email.EmailState
           }
         , emailConfirm ::
           { signal        :: IxSignal (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
+          , setQueue      :: One.Queue (write :: WRITE) (Effects eff) Email.EmailState
           }
         , password ::
           { signal       :: IxSignal (Effects eff) String
@@ -120,6 +127,11 @@ spec
   where
     performAction action props state = case action of
       ReRender -> void $ T.cotransform _ {rerender = unit}
+      ReceivedUnsavedFormData (SecurityUnsavedFormData xs@{socialLogin}) -> do
+        liftEff $ do
+          One.putQueue email.setQueue (Email.EmailPartial xs.email)
+          One.putQueue emailConfirm.setQueue (Email.EmailPartial xs.emailConfirm)
+        void $ T.cotransform _ {socialLogin = socialLogin}
       SubmitSecurity -> do
         liftEff $ IxSignal.set true pendingSignal
         mAuthToken <- liftEff $ IxSignal.get authTokenSignal
@@ -168,7 +180,7 @@ spec
         , emailSignal: email.signal
         , parentSignal: Nothing
         , updatedQueue: email.updatedQueue
-        , setQueue
+        , setQueue: email.setQueue
         }
       , Email.email
         { label: R.text "Email Confirm"
@@ -178,7 +190,7 @@ spec
         , emailSignal: emailConfirm.signal
         , parentSignal: Just email.signal
         , updatedQueue: emailConfirm.updatedQueue
-        , setQueue: setConfirmQueue
+        , setQueue: emailConfirm.setQueue
         }
       , Password.password
         { label: R.text "Password"
@@ -215,8 +227,14 @@ spec
       where
         passwordErrorQueue = unsafePerformEff $ writeOnly <$> One.newQueue
         passwordConfirmErrorQueue = unsafePerformEff $ writeOnly <$> One.newQueue
-        setQueue = unsafePerformEff $ writeOnly <$> One.newQueue
-        setConfirmQueue = unsafePerformEff $ writeOnly <$> One.newQueue
+
+
+
+newtype SecurityUnsavedFormData = SecurityUnsavedFormData
+  { email :: String
+  , emailConfirm :: String
+  , socialLogin :: SocialLoginForm
+  }
 
 
 security :: forall eff siteLinks userDetails
@@ -225,7 +243,7 @@ security :: forall eff siteLinks userDetails
             , authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
             , setUserQueues           :: SetUserSparrowClientQueues (Effects eff)
             , env                     :: Env
-            -- , initFormDataRef         :: Ref (Maybe FacebookLoginUnsavedFormData)
+            , unsavedFormDataQueue    :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
             }
          -> R.ReactElement
 security
@@ -234,7 +252,7 @@ security
   , authenticateDialogQueue
   , env
   , setUserQueues
-  -- , initFormDataRef
+  , unsavedFormDataQueue
   } =
   let {spec: reactSpec, dispatcher} =
         T.createReactSpec
@@ -247,10 +265,12 @@ security
             , email:
               { signal: emailSignal
               , updatedQueue: emailUpdatedQueue
+              , setQueue: emailSetQueue
               }
             , emailConfirm:
               { signal: emailConfirmSignal
               , updatedQueue: emailConfirmUpdatedQueue
+              , setQueue: emailConfirmSetQueue
               }
             , password:
               { signal: passwordSignal
@@ -265,8 +285,7 @@ security
               , disabledSignal: submitDisabledSignal
               }
             , pendingSignal
-            } )
-          initialState
+            } ) (initialState {initSocialLogin: socialLogin})
       submitValue this = do
         mEmail <- IxSignal.get emailSignal
         confirm <- IxSignal.get emailConfirmSignal
@@ -302,25 +321,19 @@ security
             passwordConfirmUpdatedQueue
             "passwordConfirmUpdated"
             (\this _ -> submitValue this)
+        $ Queue.whileMountedOne
+            (allowReading unsavedFormDataQueue)
+            (\this x -> unsafeCoerceEff $ dispatcher this $ ReceivedUnsavedFormData x)
             reactSpec
   in  R.createElement (R.createClass reactSpec') unit []
   where
-    {emailSignal,emailConfirmSignal} = unsafePerformEff $ do
-      mX <- pure Nothing --  takeRef initFormDataRef
-      Tuple e1 e2 <- case mX of
-        Just x -> do
-          unsafeCoerceEff $ log "Taken by security..."
-          case x of
-            FacebookLoginUnsavedFormDataSecurity {email,emailConfirm} -> do
-              unsafeCoerceEff $ log $ "sending... " <> email <> ", " <> emailConfirm
-              pure (Tuple (Email.EmailPartial email) (Email.EmailPartial emailConfirm))
-            _ -> pure (Tuple (Email.EmailPartial "") (Email.EmailPartial ""))
-        _ -> pure (Tuple (Email.EmailPartial "") (Email.EmailPartial ""))
-      a <- IxSignal.make e1
-      b <- IxSignal.make e2
-      pure {emailSignal: a, emailConfirmSignal: b}
+    emailSignal = unsafePerformEff $ IxSignal.make $ Email.EmailPartial "" 
+    emailConfirmSignal = unsafePerformEff $ IxSignal.make $ Email.EmailPartial ""
+    socialLogin = SocialLoginForm {fb: Nothing}
     emailUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     emailConfirmUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
+    emailSetQueue = unsafePerformEff $ writeOnly <$> One.newQueue
+    emailConfirmSetQueue = unsafePerformEff $ writeOnly <$> One.newQueue
     passwordSignal = unsafePerformEff (IxSignal.make "")
     passwordUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     passwordConfirmSignal = unsafePerformEff (IxSignal.make "")

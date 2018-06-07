@@ -104,10 +104,12 @@ spec :: forall eff siteLinks userDetails
         , email ::
           { signal        :: IxSignal (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
+          , setQueue      :: One.Queue (write :: WRITE) (Effects eff) Email.EmailState
           }
         , emailConfirm ::
           { signal        :: IxSignal (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
+          , setQueue      :: One.Queue (write :: WRITE) (Effects eff) Email.EmailState
           }
         , password ::
           { signal       :: IxSignal (Effects eff) String
@@ -154,8 +156,11 @@ spec
           Just _ -> liftEff $ do
             IxSignal.set true privacy.disabledSignal
             IxQueue.broadcastIxQueue (allowWriting password.updatedQueue) unit
-      ReceivedUnsavedFormData (RegisterUnsavedFormData {email,emailConfirm,socialLogin}) ->
-        pure unit
+      ReceivedUnsavedFormData (RegisterUnsavedFormData xs@{socialLogin}) -> do
+        liftEff $ do
+          One.putQueue email.setQueue (Email.EmailPartial xs.email)
+          One.putQueue emailConfirm.setQueue (Email.EmailPartial xs.emailConfirm)
+        void $ T.cotransform _ {socialLogin = socialLogin}
       SubmitRegister -> do
         liftEff $ IxSignal.set true pendingSignal
         mEmail <- liftEff (IxSignal.get email.signal)
@@ -207,7 +212,7 @@ spec
             , emailSignal: email.signal
             , parentSignal: Nothing
             , updatedQueue: email.updatedQueue
-            , setQueue
+            , setQueue: email.setQueue
             }
           , Email.email
             { label: R.text "Email Confirm"
@@ -217,7 +222,7 @@ spec
             , emailSignal: emailConfirm.signal
             , parentSignal: Just email.signal
             , updatedQueue: emailConfirm.updatedQueue
-            , setQueue: setConfirmQueue
+            , setQueue: emailConfirm.setQueue
             }
           , Password.password
             { label: R.text "Password"
@@ -288,8 +293,6 @@ spec
       where
         passwordErrorQueue = unsafePerformEff $ writeOnly <$> One.newQueue
         passwordConfirmErrorQueue = unsafePerformEff $ writeOnly <$> One.newQueue
-        setQueue = unsafePerformEff $ writeOnly <$> One.newQueue
-        setConfirmQueue = unsafePerformEff $ writeOnly <$> One.newQueue
 
 
 
@@ -330,10 +333,12 @@ register
             , email:
               { signal: emailSignal
               , updatedQueue: emailUpdatedQueue
+              , setQueue: emailSetQueue
               }
             , emailConfirm:
               { signal: emailConfirmSignal
               , updatedQueue: emailConfirmUpdatedQueue
+              , setQueue: emailConfirmSetQueue
               }
             , password:
               { signal: passwordSignal
@@ -404,6 +409,8 @@ register
     socialLogin = SocialLoginForm {fb: Nothing}
     emailUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     emailConfirmUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
+    emailSetQueue = unsafePerformEff $ writeOnly <$> One.newQueue
+    emailConfirmSetQueue = unsafePerformEff $ writeOnly <$> One.newQueue
     passwordSignal = unsafePerformEff (IxSignal.make "")
     passwordUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     passwordConfirmSignal = unsafePerformEff (IxSignal.make "")
