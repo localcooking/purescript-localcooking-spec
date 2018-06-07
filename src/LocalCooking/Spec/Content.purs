@@ -135,145 +135,146 @@ spec
     performAction = performActionLocalCooking getLCState
 
     render :: T.Render (State siteLinks userDetails) Unit (Action siteLinks userDetails)
-    render dispatch props state children = []
-      -- [ R.main [RP.style {marginTop: "4.5em"}]
-      --   [ paper
-      --     { style: if state.windowSize < Laptop
-      --                 then createStyles
-      --                         { width: "100%"
-      --                         , position: "relative"
-      --                         , minHeight: "30em"
-      --                         , padding: "1em"
-      --                         }
-      --                 else createStyles
-      --                         { maxWidth: "80em"
-      --                         , width: "100%"
-      --                         , marginLeft: "auto"
-      --                         , marginRight: "auto"
-      --                         , padding: "1em"
-      --                         , position: "relative"
-      --                         , minHeight: "30em"
-      --                         }
-      --     } $ case getUserDetailsLink state.currentPage of
-      --       Just mUserDetails -> []
-      --         -- TODO responsive design for side-drawer navigation
-      --         -- FIXME User details component
-      --       --   [ R.div [RP.style {position: "relative"}]
-      --       --     [ Drawer.withStyles
-      --       --       (\_ -> {paper: createStyles {position: "relative", width: "200px", zIndex: 1000}})
-      --       --       \{classes} -> drawer
-      --       --         { variant: Drawer.permanent
-      --       --         , anchor: Drawer.left
-      --       --         , classes: Drawer.createClasses classes
-      --       --         }
-      --       --         [ list {} $
-      --       --           [ listItem
-      --       --             { button: true
-      --       --             , onClick: mkEffFn1 \_ -> unsafeCoerceEff
-      --       --                                     $ params.siteLinks $ userDetailsLink
-      --       --                                     $ Just userDetailsGeneralLink
-      --       --             }
-      --       --             [ listItemText
-      --       --               { primary: "General"
-      --       --               }
-      --       --             ]
-      --       --           , divider {}
-      --       --           , listItem
-      --       --             { button: true
-      --       --             , onClick: mkEffFn1 \_ -> unsafeCoerceEff
-      --       --                                     $ params.siteLinks $ userDetailsLink
-      --       --                                     $ Just userDetailsSecurityLink
-      --       --             }
-      --       --             [ listItemText
-      --       --               { primary: "Security"
-      --       --               }
-      --       --             ]
-      --       --           , divider {}
-      --       --           ] <> userDetails.buttons params <>
-      --       --           [ listItem
-      --       --             { button: true
-      --       --             , onClick: mkEffFn1 \_ -> pure unit -- dispatch Logout
-      --       --               -- FIXME feels weird - shouldn't this be its own sidebar component?
-      --       --             }
-      --       --             [ listItemText
-      --       --               { primary: "Logout"
-      --       --               }
-      --       --             ]
-      --       --           ]
-      --       --         ]
-      --       --       ]
-      --       --   , R.div [RP.style {position: "absolute", left: "216px", top: "1em", paddingLeft: "1em"}] $
-      --       --     -- TODO pack currentPageSignal listener to this level, so side buttons
-      --       --     -- aren't redrawn
-      --       --     case mUserDetails of
-      --       --       Just d
-      --       --         | d == userDetailsSecurityLink ->
-      --       --           [ security
-      --       --             params
-      --       --             { env
-      --       --             , globalErrorQueue: writeOnly globalErrorQueue
-      --       --             , setUserQueues: dependenciesQueues.commonQueues.setUserQueues
-      --       --             , authenticateDialogQueue: dialog.authenticateQueue
-      --       --             , initFormDataRef
-      --       --             }
-      --       --           ]
-      --       --         | otherwise -> userDetails.content params
-      --       --       _ -> userDetails.content params
-      --       --   ]
+    render dispatch props state children =
+      [ R.main [RP.style {marginTop: "4.5em"}]
+        [ paper
+          { style: if state.windowSize < Laptop
+                      then createStyles
+                              { width: "100%"
+                              , position: "relative"
+                              , minHeight: "30em"
+                              , padding: "1em"
+                              }
+                      else createStyles
+                              { maxWidth: "80em"
+                              , width: "100%"
+                              , marginLeft: "auto"
+                              , marginRight: "auto"
+                              , padding: "1em"
+                              , position: "relative"
+                              , minHeight: "30em"
+                              }
+          } $ case getUserDetailsLink state.currentPage of
+            Just mUserDetails -> []
+            Nothing -> []
+              -- TODO responsive design for side-drawer navigation
+              -- FIXME User details component
+            --   [ R.div [RP.style {position: "relative"}]
+            --     [ Drawer.withStyles
+            --       (\_ -> {paper: createStyles {position: "relative", width: "200px", zIndex: 1000}})
+            --       \{classes} -> drawer
+            --         { variant: Drawer.permanent
+            --         , anchor: Drawer.left
+            --         , classes: Drawer.createClasses classes
+            --         }
+            --         [ list {} $
+            --           [ listItem
+            --             { button: true
+            --             , onClick: mkEffFn1 \_ -> unsafeCoerceEff
+            --                                     $ params.siteLinks $ userDetailsLink
+            --                                     $ Just userDetailsGeneralLink
+            --             }
+            --             [ listItemText
+            --               { primary: "General"
+            --               }
+            --             ]
+            --           , divider {}
+            --           , listItem
+            --             { button: true
+            --             , onClick: mkEffFn1 \_ -> unsafeCoerceEff
+            --                                     $ params.siteLinks $ userDetailsLink
+            --                                     $ Just userDetailsSecurityLink
+            --             }
+            --             [ listItemText
+            --               { primary: "Security"
+            --               }
+            --             ]
+            --           , divider {}
+            --           ] <> userDetails.buttons params <>
+            --           [ listItem
+            --             { button: true
+            --             , onClick: mkEffFn1 \_ -> pure unit -- dispatch Logout
+            --               -- FIXME feels weird - shouldn't this be its own sidebar component?
+            --             }
+            --             [ listItemText
+            --               { primary: "Logout"
+            --               }
+            --             ]
+            --           ]
+            --         ]
+            --       ]
+            --   , R.div [RP.style {position: "absolute", left: "216px", top: "1em", paddingLeft: "1em"}] $
+            --     -- TODO pack currentPageSignal listener to this level, so side buttons
+            --     -- aren't redrawn
+            --     case mUserDetails of
+            --       Just d
+            --         | d == userDetailsSecurityLink ->
+            --           [ security
+            --             params
+            --             { env
+            --             , globalErrorQueue: writeOnly globalErrorQueue
+            --             , setUserQueues: dependenciesQueues.commonQueues.setUserQueues
+            --             , authenticateDialogQueue: dialog.authenticateQueue
+            --             , initFormDataRef
+            --             }
+            --           ]
+            --         | otherwise -> userDetails.content params
+            --       _ -> userDetails.content params
+            --   ]
 
-      --       -- _ | state.currentPage == registerLink ->
-      --       --       [ register
-      --       --         params
-      --       --         { registerQueues: dependenciesQueues.commonQueues.registerQueues
-      --       --         , globalErrorQueue: writeOnly globalErrorQueue
-      --       --         , privacyPolicyQueue: dialog.privacyPolicyQueue
-      --       --         , toRoot: params.siteLinks (rootLink :: siteLinks)
-      --       --         , env
-      --       --         , initFormDataRef
-      --       --         }
-      --       --       ]
-      --       --   | otherwise ->
-      --       --       content params
-      --   ]
-      -- , -- FIXME footer component? Nah, just pack in content
-      --   typography
-      --   { variant: Typography.subheading
-      --   , style: createStyles {color: "rgba(255,255,255,0.5)", marginTop: "5em"}
-      --   , align: Typography.center
-      --   }
-      --   [ R.text "Extended Network"]
-      -- , R.div
-      --   [ RP.style {textAlign: "center", marginBottom: "5em"}
-      --   ] extendedNetwork
-      -- , divider {}
-      -- , typography
-      --   { variant: Typography.caption
-      --   , style: createStyles {marginTop: "5em"}
-      --   , align: Typography.center
-      --   }
-      --   [ R.text "Copyright © Local Cooking Inc. 2018, All rights reserved." ]
-      -- , typography
-      --   { variant: Typography.caption
-      --   , align: Typography.center
-      --   }
-      --   [ R.text "Proudly made in Golden, Colorado, The United States of America."
-      --   ]
-      -- , R.div [RP.style {textAlign: "center", marginTop: "1em"}]
-      --   [ RS.svg
-      --     [ RP.viewBox coloradoFlagViewBox
-      --     , RP.width (show flagWidth)
-      --     , RP.height (show flagHeight)
-      --     ] coloradoFlag
-      --   , RS.svg
-      --     [ RP.viewBox usaFlagViewBox
-      --     , RP.width (show flagWidth)
-      --     , RP.height (show flagHeight)
-      --     ] usaFlag
-      --   ]
-      -- ]
-      -- where
-      --   flagWidth = 48
-      --   flagHeight = 26
+            -- _ | state.currentPage == registerLink ->
+            --       [ register
+            --         params
+            --         { registerQueues: dependenciesQueues.commonQueues.registerQueues
+            --         , globalErrorQueue: writeOnly globalErrorQueue
+            --         , privacyPolicyQueue: dialog.privacyPolicyQueue
+            --         , toRoot: params.siteLinks (rootLink :: siteLinks)
+            --         , env
+            --         , initFormDataRef
+            --         }
+            --       ]
+            --   | otherwise ->
+            --       content params
+        ]
+      , -- FIXME footer component? Nah, just pack in content
+        typography
+        { variant: Typography.subheading
+        , style: createStyles {color: "rgba(255,255,255,0.5)", marginTop: "5em"}
+        , align: Typography.center
+        }
+        [ R.text "Extended Network"]
+      , R.div
+        [ RP.style {textAlign: "center", marginBottom: "5em"}
+        ] templateArgs.extendedNetwork
+      , divider {}
+      , typography
+        { variant: Typography.caption
+        , style: createStyles {marginTop: "5em"}
+        , align: Typography.center
+        }
+        [ R.text "Copyright © Local Cooking Inc. 2018, All rights reserved." ]
+      , typography
+        { variant: Typography.caption
+        , align: Typography.center
+        }
+        [ R.text "Proudly made in Golden, Colorado, The United States of America."
+        ]
+      , R.div [RP.style {textAlign: "center", marginTop: "1em"}]
+        [ RS.svg
+          [ RP.viewBox coloradoFlagViewBox
+          , RP.width (show flagWidth)
+          , RP.height (show flagHeight)
+          ] coloradoFlag
+        , RS.svg
+          [ RP.viewBox usaFlagViewBox
+          , RP.width (show flagWidth)
+          , RP.height (show flagHeight)
+          ] usaFlag
+        ]
+      ]
+      where
+        flagWidth = 48
+        flagHeight = 26
 
 
 content :: forall eff siteLinks userDetailsLinks userDetails siteQueues
