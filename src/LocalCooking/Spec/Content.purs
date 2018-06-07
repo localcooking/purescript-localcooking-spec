@@ -84,7 +84,7 @@ type Effects eff =
   -- , dom        :: DOM
   -- , history    :: HISTORY
   -- , now        :: NOW
-  -- , timer      :: TIMER
+  , timer      :: TIMER
   , webStorage :: WEB_STORAGE
   -- , console    :: CONSOLE
   , scrypt     :: SCRYPT
@@ -223,24 +223,22 @@ spec
                         , setUserQueues: dependenciesQueues.commonQueues.setUserQueues
                         , authenticateDialogQueue: dialogQueues.authenticate.openQueue
                         , unsavedFormDataQueue: templateArgs.security.unsavedFormDataQueue
-                        -- , initFormDataRef
                         }
                       ]
                     | otherwise -> templateArgs.userDetails.content params
                   _ -> templateArgs.userDetails.content params
               ]
 
-            _ | state.currentPage == registerLink -> []
-                  -- [ register
-                  --   params
-                  --   { registerQueues: dependenciesQueues.commonQueues.registerQueues
-                  --   , globalErrorQueue: writeOnly globalErrorQueue
-                  --   , privacyPolicyQueue: dialog.privacyPolicyQueue
-                  --   , toRoot: params.siteLinks (rootLink :: siteLinks)
-                  --   , env
-                  --   , initFormDataRef
-                  --   }
-                  -- ]
+            _ | state.currentPage == registerLink ->
+                  [ register
+                    params
+                    { registerQueues: dependenciesQueues.commonQueues.registerQueues
+                    , globalErrorQueue: writeOnly globalErrorQueue
+                    , privacyPolicyQueue: dialogQueues.privacyPolicy.openQueue
+                    , unsavedFormDataQueue: templateArgs.register.unsavedFormDataQueue
+                    , env
+                    }
+                  ]
               | otherwise ->
                   templateArgs.content params
         ]

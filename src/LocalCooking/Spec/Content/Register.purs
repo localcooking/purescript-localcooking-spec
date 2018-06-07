@@ -90,7 +90,7 @@ type Effects eff =
   , exception :: EXCEPTION
   , uuid      :: GENUUID
   , timer     :: TIMER
-  , console   :: CONSOLE
+  -- , console   :: CONSOLE
   | eff)
 
 
@@ -152,7 +152,7 @@ spec
       ClickedPrivacyPolicy -> do
         mX <- liftBase (OneIO.callAsync privacyPolicyQueue unit)
         case mX of
-          Nothing -> liftEff $ log "Privacy policy denied?"
+          Nothing -> pure unit -- liftEff $ log "Privacy policy denied?"
           Just _ -> liftEff $ do
             IxSignal.set true privacy.disabledSignal
             IxQueue.broadcastIxQueue (allowWriting password.updatedQueue) unit

@@ -18,29 +18,18 @@ import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Semantics.Common (Login)
 import LocalCooking.Common.User.Password (HashedPassword)
 import LocalCooking.Spec.Content (content)
--- import LocalCooking.Spec.Content.Register (register)
--- import LocalCooking.Spec.Content.UserDetails.Security (security)
--- import Facebook.State (FacebookLoginUnsavedFormData)
-
--- import Sparrow.Client.Queue (callSparrowClientQueues)
 
 import Prelude
 import Data.URI.Location (Location, class ToLocation)
 import Data.UUID (GENUUID)
 import Data.Maybe (Maybe (..))
--- import Data.Either (Either (..))
 import Data.Lens (Lens', Prism', lens, prism')
--- import Data.Generic (class Generic)
 import Control.Monad.Eff (Eff)
--- import Control.Monad.Eff.Console (CONSOLE, log)
--- import Control.Monad.Eff.Class (liftEff)
--- import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Now (NOW)
--- import Control.Monad.Eff.Timer (TIMER, setTimeout)
--- import Control.Monad.Base (liftBase)
+import Control.Monad.Eff.Timer (TIMER)
 
 import Thermite as T
 import React as R
@@ -49,19 +38,7 @@ import React.DOM.Props as RP
 import React.DOM.SVG as RS
 import MaterialUI.MuiThemeProvider (ColorPalette, muiThemeProvider, createMuiTheme)
 import MaterialUI.CssBaseline (cssBaseline)
--- import MaterialUI.Paper (paper)
--- import MaterialUI.Divider (divider)
--- import MaterialUI.Typography (typography)
--- import MaterialUI.Typography as Typography
--- import MaterialUI.Drawer (drawer)
--- import MaterialUI.Drawer as Drawer
--- import MaterialUI.List (list)
--- import MaterialUI.ListItem (listItem)
--- import MaterialUI.ListItemText (listItemText)
--- import MaterialUI.Types (createStyles)
 import DOM (DOM)
--- import DOM.HTML.Types (HISTORY)
--- import DOM.HTML.Window.Extra (WindowSize (Laptop))
 import Browser.WebStorage (WEB_STORAGE)
 import Crypto.Scrypt (SCRYPT)
 
@@ -91,7 +68,7 @@ type Effects eff =
   , dom        :: DOM
   -- , history    :: HISTORY
   , now        :: NOW
-  -- , timer      :: TIMER
+  , timer      :: TIMER
   , webStorage :: WEB_STORAGE
   -- , console    :: CONSOLE
   , scrypt     :: SCRYPT
