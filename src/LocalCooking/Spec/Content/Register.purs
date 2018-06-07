@@ -11,7 +11,7 @@ import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorRegister), RegisterError (..))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Dependencies.Common (RegisterSparrowClientQueues)
-import LocalCooking.Semantics.Common (Register (..), SocialLoginForm)
+import LocalCooking.Semantics.Common (Register (..), SocialLoginForm (..))
 import LocalCooking.Common.User.Password (hashPassword)
 import Google.ReCaptcha (ReCaptchaResponse)
 import Facebook.Call (FacebookLoginLink (..), facebookLoginLinkToURI)
@@ -57,7 +57,7 @@ import Crypto.Scrypt (SCRYPT)
 
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import Queue.Types (readOnly, writeOnly, allowWriting)
+import Queue.Types (readOnly, writeOnly, allowWriting, allowReading)
 import Queue (WRITE, READ)
 import Queue.One as One
 import Queue.One.Aff as OneIO
@@ -81,6 +81,7 @@ data Action
   = SubmitRegister
   | ReRender
   | ClickedPrivacyPolicy
+  | ReceivedUnsavedFormData RegisterUnsavedFormData
 
 
 type Effects eff =
@@ -153,6 +154,8 @@ spec
           Just _ -> liftEff $ do
             IxSignal.set true privacy.disabledSignal
             IxQueue.broadcastIxQueue (allowWriting password.updatedQueue) unit
+      ReceivedUnsavedFormData (RegisterUnsavedFormData {email,emailConfirm,socialLogin}) ->
+        pure unit
       SubmitRegister -> do
         liftEff $ IxSignal.set true pendingSignal
         mEmail <- liftEff (IxSignal.get email.signal)
@@ -255,27 +258,6 @@ spec
                       }
                 }
                 state.socialLogin
-              -- [ mkSocialFab env.facebookClientId "#3b5998" "#1e3f82" facebookIcon (isJust state.fbUserId) $
-              --     Just $ FacebookLoginLink
-              --     { redirectURL: params.toURI (toLocation FacebookLoginReturn)
-              --     , state: FacebookLoginState
-              --       { origin: toLocation $ unsafePerformEff $ IxSignal.get params.currentPageSignal
-              --       , formData: Just $ FacebookLoginUnsavedFormDataRegister
-              --         { email: case unsafePerformEff (IxSignal.get email.signal) of
-              --             Email.EmailPartial e -> e
-              --             Email.EmailBad e -> e
-              --             Email.EmailGood e -> Email.toString e
-              --         , emailConfirm: case unsafePerformEff (IxSignal.get emailConfirm.signal) of
-              --             Email.EmailPartial e -> e
-              --             Email.EmailBad e -> e
-              --             Email.EmailGood e -> Email.toString e
-              --         , fbUserId: Nothing
-              --         }
-              --       }
-              --     }
-              -- , mkSocialFab env.facebookClientId "#1da1f3" "#0f8cdb" twitterIcon false Nothing
-              -- , mkSocialFab env.facebookClientId "#dd4e40" "#c13627" googleIcon false Nothing
-              -- ]
           , reCaptcha
             { reCaptchaSignal
             , reCaptchaSiteKey: env.googleReCaptchaSiteKey
@@ -322,11 +304,11 @@ newtype RegisterUnsavedFormData = RegisterUnsavedFormData
 register :: forall eff siteLinks userDetails
           . ToLocation siteLinks
          => LocalCookingParams siteLinks userDetails (Effects eff)
-         -> { registerQueues     :: RegisterSparrowClientQueues (Effects eff)
-            , globalErrorQueue   :: One.Queue (write :: WRITE) (Effects eff) GlobalError
-            , privacyPolicyQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-            , env                :: Env
-            -- , initFormDataRef    :: Ref (Maybe FacebookLoginUnsavedFormData)
+         -> { registerQueues       :: RegisterSparrowClientQueues (Effects eff)
+            , globalErrorQueue     :: One.Queue (write :: WRITE) (Effects eff) GlobalError
+            , privacyPolicyQueue   :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
+            , env                  :: Env
+            , unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) RegisterUnsavedFormData
             }
          -> R.ReactElement
 register
@@ -335,6 +317,7 @@ register
   , globalErrorQueue
   , privacyPolicyQueue
   , env
+  , unsavedFormDataQueue
   } =
   let {spec: reactSpec, dispatcher} =
         T.createReactSpec
@@ -370,7 +353,7 @@ register
               }
             , reCaptchaSignal
             , pendingSignal
-            } ) (initialState {initFbUserId: fbUserId})
+            } ) (initialState {initSocialLogin: socialLogin})
       submitValue this = do
         mEmail <- IxSignal.get emailSignal
         confirm <- IxSignal.get emailConfirmSignal
@@ -410,32 +393,15 @@ register
             passwordConfirmUpdatedQueue
             "passwordConfirmUpdated"
             (\this _ -> submitValue this)
+        $ Queue.whileMountedOne
+            (allowReading unsavedFormDataQueue)
+            (\this x -> unsafeCoerceEff $ dispatcher this $ ReceivedUnsavedFormData x)
             reactSpec
   in  R.createElement (R.createClass reactSpec') unit []
   where
-    {emailSignal,emailConfirmSignal,fbUserId} = unsafePerformEff $ do
-      mX <- pure Nothing -- takeRef initFormDataRef FIXME
-      let {email,emailConfirm,fbUserId:fbUserId'} = case mX of
-            Just x -> case x of
-              FacebookLoginUnsavedFormDataRegister {email,emailConfirm,fbUserId} -> do
-                { email: Email.EmailPartial email
-                , emailConfirm: Email.EmailPartial emailConfirm
-                , fbUserId
-                }
-              _ ->
-                { email: Email.EmailPartial ""
-                , emailConfirm: Email.EmailPartial ""
-                , fbUserId: Nothing
-                }
-            _ ->
-              { email: Email.EmailPartial ""
-              , emailConfirm: Email.EmailPartial ""
-              , fbUserId: Nothing
-              }
-      a <- IxSignal.make email
-      b <- IxSignal.make emailConfirm
-      unsafeCoerceEff $ log $ "From register: " <> show fbUserId'
-      pure {emailSignal: a, emailConfirmSignal: b,fbUserId:fbUserId'}
+    emailSignal = unsafePerformEff $ IxSignal.make $ Email.EmailPartial "" 
+    emailConfirmSignal = unsafePerformEff $ IxSignal.make $ Email.EmailPartial ""
+    socialLogin = SocialLoginForm {fb: Nothing}
     emailUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     emailConfirmUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     passwordSignal = unsafePerformEff (IxSignal.make "")
