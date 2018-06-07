@@ -1,6 +1,6 @@
 module LocalCooking.Spec.Content where
 
--- import LocalCooking.Spec.Content.UserDetails.Security (security)
+import LocalCooking.Spec.Content.UserDetails.Security (security)
 -- import LocalCooking.Spec.Content.Register (register)
 import LocalCooking.Spec.Misc.Flags.USA (usaFlag, usaFlagViewBox)
 import LocalCooking.Spec.Misc.Flags.Colorado (coloradoFlag, coloradoFlagViewBox)
@@ -9,7 +9,7 @@ import LocalCooking.Spec.Dialogs (AllDialogs)
 import LocalCooking.Common.User.Password (HashedPassword)
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, initLocalCookingState, performActionLocalCooking, LocalCookingAction, whileMountedLocalCooking)
 import LocalCooking.Dependencies (DependenciesQueues)
-import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
+import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn (AuthTokenDeltaInLogout))
 import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.User.Class (class UserDetails)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks, getUserDetailsLink, userDetailsLink, userDetailsGeneralLink, userDetailsSecurityLink, registerLink, rootLink)
@@ -87,7 +87,7 @@ type Effects eff =
   -- , timer      :: TIMER
   , webStorage :: WEB_STORAGE
   -- , console    :: CONSOLE
-  -- , scrypt     :: SCRYPT
+  , scrypt     :: SCRYPT
   | eff)
 
 getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
@@ -155,86 +155,87 @@ spec
                               , minHeight: "30em"
                               }
           } $ case getUserDetailsLink state.currentPage of
-            Just mUserDetails -> []
-            Nothing -> []
+            Just mUserDetails ->
               -- TODO responsive design for side-drawer navigation
               -- FIXME User details component
-            --   [ R.div [RP.style {position: "relative"}]
-            --     [ Drawer.withStyles
-            --       (\_ -> {paper: createStyles {position: "relative", width: "200px", zIndex: 1000}})
-            --       \{classes} -> drawer
-            --         { variant: Drawer.permanent
-            --         , anchor: Drawer.left
-            --         , classes: Drawer.createClasses classes
-            --         }
-            --         [ list {} $
-            --           [ listItem
-            --             { button: true
-            --             , onClick: mkEffFn1 \_ -> unsafeCoerceEff
-            --                                     $ params.siteLinks $ userDetailsLink
-            --                                     $ Just userDetailsGeneralLink
-            --             }
-            --             [ listItemText
-            --               { primary: "General"
-            --               }
-            --             ]
-            --           , divider {}
-            --           , listItem
-            --             { button: true
-            --             , onClick: mkEffFn1 \_ -> unsafeCoerceEff
-            --                                     $ params.siteLinks $ userDetailsLink
-            --                                     $ Just userDetailsSecurityLink
-            --             }
-            --             [ listItemText
-            --               { primary: "Security"
-            --               }
-            --             ]
-            --           , divider {}
-            --           ] <> userDetails.buttons params <>
-            --           [ listItem
-            --             { button: true
-            --             , onClick: mkEffFn1 \_ -> pure unit -- dispatch Logout
-            --               -- FIXME feels weird - shouldn't this be its own sidebar component?
-            --             }
-            --             [ listItemText
-            --               { primary: "Logout"
-            --               }
-            --             ]
-            --           ]
-            --         ]
-            --       ]
-            --   , R.div [RP.style {position: "absolute", left: "216px", top: "1em", paddingLeft: "1em"}] $
-            --     -- TODO pack currentPageSignal listener to this level, so side buttons
-            --     -- aren't redrawn
-            --     case mUserDetails of
-            --       Just d
-            --         | d == userDetailsSecurityLink ->
-            --           [ security
-            --             params
-            --             { env
-            --             , globalErrorQueue: writeOnly globalErrorQueue
-            --             , setUserQueues: dependenciesQueues.commonQueues.setUserQueues
-            --             , authenticateDialogQueue: dialog.authenticateQueue
-            --             , initFormDataRef
-            --             }
-            --           ]
-            --         | otherwise -> userDetails.content params
-            --       _ -> userDetails.content params
-            --   ]
+              [ R.div [RP.style {position: "relative"}]
+                [ Drawer.withStyles
+                  (\_ -> {paper: createStyles {position: "relative", width: "200px", zIndex: 1000}})
+                  \{classes} -> drawer
+                    { variant: Drawer.permanent
+                    , anchor: Drawer.left
+                    , classes: Drawer.createClasses classes
+                    }
+                    [ list {} $
+                      [ listItem
+                        { button: true
+                        , onClick: mkEffFn1 \_ -> unsafeCoerceEff
+                                                $ params.siteLinks $ userDetailsLink
+                                                $ Just userDetailsGeneralLink
+                        }
+                        [ listItemText
+                          { primary: "General"
+                          }
+                        ]
+                      , divider {}
+                      , listItem
+                        { button: true
+                        , onClick: mkEffFn1 \_ -> unsafeCoerceEff
+                                                $ params.siteLinks $ userDetailsLink
+                                                $ Just userDetailsSecurityLink
+                        }
+                        [ listItemText
+                          { primary: "Security"
+                          }
+                        ]
+                      , divider {}
+                      ] <> templateArgs.userDetails.buttons params
+                        <>
+                      [ listItem
+                        { button: true
+                        , onClick: mkEffFn1 \_ -> unsafeCoerceEff
+                                                $ authTokenDeltaIn AuthTokenDeltaInLogout -- pure unit -- dispatch Logout
+                          -- FIXME feels weird - shouldn't this be its own sidebar component?
+                        }
+                        [ listItemText
+                          { primary: "Logout"
+                          }
+                        ]
+                      ]
+                    ]
+                  ]
+              , R.div [RP.style {position: "absolute", left: "216px", top: "1em", paddingLeft: "1em"}] $
+                -- TODO pack currentPageSignal listener to this level, so side buttons
+                -- aren't redrawn
+                case mUserDetails of
+                  Just d
+                    | d == userDetailsSecurityLink ->
+                      [ security
+                        params
+                        { env
+                        , globalErrorQueue: writeOnly globalErrorQueue
+                        , setUserQueues: dependenciesQueues.commonQueues.setUserQueues
+                        , authenticateDialogQueue: dialogQueues.authenticate.openQueue
+                        -- , initFormDataRef
+                        }
+                      ]
+                    | otherwise -> templateArgs.userDetails.content params
+                  _ -> templateArgs.userDetails.content params
+              ]
 
-            -- _ | state.currentPage == registerLink ->
-            --       [ register
-            --         params
-            --         { registerQueues: dependenciesQueues.commonQueues.registerQueues
-            --         , globalErrorQueue: writeOnly globalErrorQueue
-            --         , privacyPolicyQueue: dialog.privacyPolicyQueue
-            --         , toRoot: params.siteLinks (rootLink :: siteLinks)
-            --         , env
-            --         , initFormDataRef
-            --         }
-            --       ]
-            --   | otherwise ->
-            --       content params
+            _ | state.currentPage == registerLink -> []
+                  -- [ register
+                  --   params
+                  --   { registerQueues: dependenciesQueues.commonQueues.registerQueues
+                  --   , globalErrorQueue: writeOnly globalErrorQueue
+                  --   , privacyPolicyQueue: dialog.privacyPolicyQueue
+                  --   , toRoot: params.siteLinks (rootLink :: siteLinks)
+                  --   , env
+                  --   , initFormDataRef
+                  --   }
+                  -- ]
+              | otherwise ->
+                  templateArgs.content params
         ]
       , -- FIXME footer component? Nah, just pack in content
         typography
