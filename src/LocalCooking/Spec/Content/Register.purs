@@ -5,12 +5,11 @@ import LocalCooking.Spec.Common.Form.Email as Email
 import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Common.Form.Submit as Submit
 import LocalCooking.Spec.Common.Form.ReCaptcha (reCaptcha)
-import LocalCooking.Global.Error (GlobalError (GlobalErrorRegister), RegisterError (..))
+import LocalCooking.Spec.Misc.Social (mkSocialFab)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
+import LocalCooking.Global.Error (GlobalError (GlobalErrorRegister), RegisterError (..))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
--- import LocalCooking.Global.Links.Class (class ToLocation, toLocation)
--- import LocalCooking.Client.Dependencies.Register (RegisterSparrowClientQueues, RegisterInitIn (..), RegisterInitOut (..))
 import LocalCooking.Dependencies.Common (RegisterSparrowClientQueues)
 import LocalCooking.Semantics.Common (Register (..))
 import LocalCooking.Common.User.Password (hashPassword)
@@ -100,7 +99,6 @@ spec :: forall eff siteLinks userDetails
      -> { registerQueues     :: RegisterSparrowClientQueues (Effects eff)
         , globalErrorQueue   :: One.Queue (write :: WRITE) (Effects eff) GlobalError
         , privacyPolicyQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-        -- , toRoot             :: Eff (Effects eff) Unit
         , env                :: Env
         , email ::
           { signal        :: IxSignal (Effects eff) Email.EmailState
@@ -131,12 +129,11 @@ spec :: forall eff siteLinks userDetails
         , pendingSignal   :: IxSignal (Effects eff) Boolean
         } -> T.Spec (Effects eff) State Unit Action
 spec
-  params@{toURI,currentPageSignal}
+  params
   { registerQueues
   , globalErrorQueue
   , privacyPolicyQueue
-  -- , toRoot
-  , env -- : {facebookClientId, salt, googleReCaptchaSiteKey}
+  , env
   , reCaptchaSignal
   , pendingSignal
   , email
@@ -240,11 +237,11 @@ spec
             , errorQueue: passwordConfirmErrorQueue
             }
           , R.div [RP.style {display: "flex", justifyContent: "space-evenly", paddingTop: "2em", paddingBottom: "2em"}] $
-              [ mkFab env.facebookClientId "#3b5998" "#1e3f82" facebookIcon (isJust state.fbUserId) $
+              [ mkSocialFab env.facebookClientId "#3b5998" "#1e3f82" facebookIcon (isJust state.fbUserId) $
                   Just $ FacebookLoginLink
-                  { redirectURL: toURI (toLocation FacebookLoginReturn)
+                  { redirectURL: params.toURI (toLocation FacebookLoginReturn)
                   , state: FacebookLoginState
-                    { origin: toLocation $ unsafePerformEff $ IxSignal.get currentPageSignal
+                    { origin: toLocation $ unsafePerformEff $ IxSignal.get params.currentPageSignal
                     , formData: Just $ FacebookLoginUnsavedFormDataRegister
                       { email: case unsafePerformEff (IxSignal.get email.signal) of
                           Email.EmailPartial e -> e
@@ -258,8 +255,8 @@ spec
                       }
                     }
                   }
-              , mkFab env.facebookClientId "#1da1f3" "#0f8cdb" twitterIcon false Nothing
-              , mkFab env.facebookClientId "#dd4e40" "#c13627" googleIcon false Nothing
+              , mkSocialFab env.facebookClientId "#1da1f3" "#0f8cdb" twitterIcon false Nothing
+              , mkSocialFab env.facebookClientId "#dd4e40" "#c13627" googleIcon false Nothing
               ]
           , reCaptcha
             { reCaptchaSignal
@@ -301,7 +298,6 @@ register :: forall eff siteLinks userDetails
          -> { registerQueues     :: RegisterSparrowClientQueues (Effects eff)
             , globalErrorQueue   :: One.Queue (write :: WRITE) (Effects eff) GlobalError
             , privacyPolicyQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-            -- , toRoot             :: Eff (Effects eff) Unit
             , env                :: Env
             -- , initFormDataRef    :: Ref (Maybe FacebookLoginUnsavedFormData)
             }
@@ -311,9 +307,7 @@ register
   { registerQueues
   , globalErrorQueue
   , privacyPolicyQueue
-  -- , toRoot
   , env
-  -- , initFormDataRef
   } =
   let {spec: reactSpec, dispatcher} =
         T.createReactSpec
@@ -322,7 +316,6 @@ register
             { registerQueues
             , globalErrorQueue
             , privacyPolicyQueue
-            -- , toRoot
             , env
             , email:
               { signal: emailSignal
@@ -428,35 +421,3 @@ register
     submitDisabledSignal = unsafePerformEff (IxSignal.make true)
     privacyQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     privacyDisabledSignal = unsafePerformEff (IxSignal.make false)
-
-
--- FIXME use generic
--- | For social logins
-mkFab :: FacebookClientId -> String -> String -> R.ReactElement
-      -> Boolean -> Maybe FacebookLoginLink -> R.ReactElement
-mkFab facebookClientId mainColor darkColor icon hasValue mLink =
-  Button.withStyles
-    (\theme ->
-      { root: createStyles
-        { backgroundColor: mainColor
-        , color: "#ffffff"
-        , "&:hover": {backgroundColor: darkColor}
-        }
-      }
-    )
-    \{classes} -> button
-      { variant: Button.fab
-      , classes: Button.createClasses {root: classes.root}
-      , disabled: case mLink of
-        Nothing -> true
-        _ -> hasValue
-      , href: case mLink of
-        Nothing -> ""
-        Just link -> URI.print (facebookLoginLinkToURI facebookClientId link)
-      , style:
-        if hasValue
-          then createStyles
-                { backgroundColor: "#9df860"
-                }
-          else createStyles {}
-      } [icon]

@@ -138,15 +138,15 @@ loginDialog
             , errorQueue: passwordErrorQueue
             }
           , R.div [RP.style {display: "flex", justifyContent: "space-evenly", paddingTop: "2em"}] $
-              [ mkSocialFab facebookClientId "#3b5998" "#1e3f82" facebookIcon $ Just $ FacebookLoginLink
+              [ mkSocialFab facebookClientId "#3b5998" "#1e3f82" facebookIcon false $ Just $ FacebookLoginLink
                 { redirectURL: toURI (toLocation FacebookLoginReturn)
                 , state: FacebookLoginState
                   { origin: toLocation $ unsafePerformEff $ IxSignal.get currentPageSignal
                   , formData: Nothing
                   }
                 }
-              , mkSocialFab facebookClientId "#1da1f3" "#0f8cdb" twitterIcon Nothing
-              , mkSocialFab facebookClientId "#dd4e40" "#c13627" googleIcon Nothing
+              , mkSocialFab facebookClientId "#1da1f3" "#0f8cdb" twitterIcon false Nothing
+              , mkSocialFab facebookClientId "#dd4e40" "#c13627" googleIcon false Nothing
               ]
           ]
     , obtain: do

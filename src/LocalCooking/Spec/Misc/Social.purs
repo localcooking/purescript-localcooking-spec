@@ -16,8 +16,8 @@ import MaterialUI.Button as Button
 
 -- | For social logins
 mkSocialFab :: FacebookClientId -> String -> String -> R.ReactElement
-            -> Maybe FacebookLoginLink -> R.ReactElement
-mkSocialFab facebookClientId mainColor darkColor icon mLink =
+            -> Boolean -> Maybe FacebookLoginLink -> R.ReactElement
+mkSocialFab facebookClientId mainColor darkColor icon hasValue mLink =
   Button.withStyles
     (\theme ->
       { root: createStyles
@@ -27,7 +27,7 @@ mkSocialFab facebookClientId mainColor darkColor icon mLink =
         }
       }
     )
-    (\{classes} ->
+    \{classes} ->
       button
         { variant: Button.fab
         , classes: Button.createClasses {root: classes.root}
@@ -36,7 +36,11 @@ mkSocialFab facebookClientId mainColor darkColor icon mLink =
           _ -> false
         , href: case mLink of
           Nothing -> ""
-          Just link -> URI.print $
-            facebookLoginLinkToURI facebookClientId link
+          Just link -> URI.print (facebookLoginLinkToURI facebookClientId link)
+        , style:
+          if hasValue
+            then createStyles
+                  { backgroundColor: "#9df860"
+                  }
+            else createStyles {}
         } [icon]
-    )
