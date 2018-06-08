@@ -54,29 +54,6 @@ type AllDialogs eff =
   }
 
 
-newDialogsQueues :: forall eff. Eff (ref :: REF | eff) (AllDialogs (ref :: REF | eff))
-newDialogsQueues = do
-  loginOpenQueue <- OneIO.newIOQueues
-  loginCloseQueue <- writeOnly <$> One.newQueue
-
-  authenticateOpenQueue <- OneIO.newIOQueues
-
-  privacyPolicyOpenQueue <- OneIO.newIOQueues
-
-  pure
-    { login:
-      { openQueue: loginOpenQueue
-      , closeQueue: loginCloseQueue
-      }
-    , authenticate:
-      { openQueue: authenticateOpenQueue
-      }
-    , privacyPolicy:
-      { openQueue: privacyPolicyOpenQueue
-      }
-    }
-
-
 dialogs :: forall eff siteLinks userDetails userDetailsLinks
          . LocalCookingSiteLinks siteLinks userDetailsLinks
         => ToLocation siteLinks
