@@ -17,6 +17,7 @@ import Prelude
 import Data.Maybe (Maybe)
 import Data.UUID (GENUUID)
 import Data.URI.Location (class ToLocation)
+import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import React as R
@@ -24,6 +25,7 @@ import DOM (DOM)
 import Crypto.Scrypt (SCRYPT)
 
 import Queue (WRITE)
+import Queue.Types (writeOnly)
 import Queue.One as One
 import Queue.One.Aff as OneIO
 
@@ -50,6 +52,29 @@ type AllDialogs eff =
     { openQueue :: OneIO.IOQueues eff Unit (Maybe Unit)
     }
   }
+
+
+newDialogsQueues :: forall eff. Eff (ref :: REF | eff) (AllDialogs (ref :: REF | eff))
+newDialogsQueues = do
+  loginOpenQueue <- OneIO.newIOQueues
+  loginCloseQueue <- writeOnly <$> One.newQueue
+
+  authenticateOpenQueue <- OneIO.newIOQueues
+
+  privacyPolicyOpenQueue <- OneIO.newIOQueues
+
+  pure
+    { login:
+      { openQueue: loginOpenQueue
+      , closeQueue: loginCloseQueue
+      }
+    , authenticate:
+      { openQueue: authenticateOpenQueue
+      }
+    , privacyPolicy:
+      { openQueue: privacyPolicyOpenQueue
+      }
+    }
 
 
 dialogs :: forall eff siteLinks userDetails userDetailsLinks
