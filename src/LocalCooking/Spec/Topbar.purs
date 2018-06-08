@@ -3,9 +3,9 @@ module LocalCooking.Spec.Topbar where
 import LocalCooking.Global.Links.Class
   (class LocalCookingSiteLinks, rootLink, getUserDetailsLink, userDetailsLink)
 import LocalCooking.Global.User.Class
-  (class UserDetails, getEmailAddress)
+  (class UserDetails, getUser)
 import LocalCooking.Common.AccessToken.Auth (AuthToken)
-import LocalCooking.Semantics.Common (Login)
+import LocalCooking.Semantics.Common (Login, User (..))
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn (AuthTokenInitInLogin))
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
 
@@ -149,7 +149,9 @@ spec
                   , disabled: case getUserDetailsLink state.currentPage of
                     Just _ -> true
                     _ -> false
-                  } [R.text $ Email.toString $ getEmailAddress userDetails]
+                  } [ case getUser userDetails of
+                        User {email} -> R.text (Email.toString email)
+                    ]
                 ]
           ]
         ]
