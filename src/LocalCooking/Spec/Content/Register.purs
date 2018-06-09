@@ -8,10 +8,10 @@ import LocalCooking.Spec.Common.Form.ReCaptcha (reCaptcha)
 import LocalCooking.Spec.Misc.Social (mkSocialFab, mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
-import LocalCooking.Global.Error (GlobalError (GlobalErrorRegister), RegisterError (..))
+import LocalCooking.Global.Error (GlobalError (GlobalErrorRegister))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Dependencies.Common (RegisterSparrowClientQueues)
-import LocalCooking.Semantics.Common (Register (..), SocialLoginForm (..))
+import LocalCooking.Semantics.Common (Register (..), RegisterError (..), SocialLoginForm (..))
 import LocalCooking.Common.User.Password (hashPassword)
 import Google.ReCaptcha (ReCaptchaResponse)
 import Facebook.Call (FacebookLoginLink (..), facebookLoginLinkToURI)
@@ -175,13 +175,9 @@ spec
                     { password: passwordString
                     , salt: env.salt
                     }
-                  pure Nothing -- FIXME
-                  -- OneIO.callAsync registerQueues (Register {email,password,reCaptcha,fbUserId: state.fbUserId})
+                  OneIO.callAsync registerQueues (Register {email,password,reCaptcha,social: state.socialLogin})
                 liftEff $ do
-                  One.putQueue globalErrorQueue $ case mErr of
-                    Nothing -> GlobalErrorRegister $
-                      Just RegisterErrorEmailInUse -- FIXME bad recaptcha response error?
-                    Just JSONUnit -> GlobalErrorRegister Nothing
+                  One.putQueue globalErrorQueue $ GlobalErrorRegister mErr
                   IxSignal.set false pendingSignal
               _ -> pure unit
           _ -> pure unit
