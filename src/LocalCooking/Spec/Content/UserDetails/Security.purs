@@ -4,13 +4,14 @@ import LocalCooking.Spec.Common.Pending (pending)
 import LocalCooking.Spec.Common.Form.Email as Email
 import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Common.Form.Submit as Submit
+import LocalCooking.Spec.Misc.Social (mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorSecurity), SecurityMessage (..))
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.Common (GetUserSparrowClientQueues, SetUserSparrowClientQueues)
 import LocalCooking.Dependencies.AccessToken.Generic (AccessInitIn (..))
-import LocalCooking.Semantics.Common (User (..), SocialLoginForm (..))
+import LocalCooking.Semantics.Common (User (..), SetUser (..), SocialLoginForm (..))
 -- import LocalCooking.Client.Dependencies.Security (SecuritySparrowClientQueues, SecurityInitIn' (..), SecurityInitOut' (..))
 -- import LocalCooking.Client.Dependencies.AccessToken.Generic (AuthInitIn (..), AuthInitOut (..))
 import Facebook.State (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataSecurity))
@@ -18,8 +19,10 @@ import Facebook.State (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDat
 import Prelude
 import Data.Maybe (Maybe (..))
 import Data.Tuple (Tuple (..))
+import Data.URI.Location (class ToLocation)
 import Data.UUID (GENUUID)
 import Data.Argonaut.JSONUnit (JSONUnit (..))
+import Text.Email.Validate as Email
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff.Ref (REF, Ref)
 -- import Control.Monad.Eff.Ref.Extra (takeRef)
@@ -83,7 +86,8 @@ type Effects eff =
 
 
 spec :: forall eff siteLinks userDetails
-      . LocalCookingParams siteLinks userDetails (Effects eff)
+      . ToLocation siteLinks
+     => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { globalErrorQueue        :: One.Queue (write :: WRITE) (Effects eff) GlobalError
         , env                     :: Env
         , getUserQueues           :: GetUserSparrowClientQueues (Effects eff)
@@ -114,7 +118,7 @@ spec :: forall eff siteLinks userDetails
         , pendingSignal            :: IxSignal (Effects eff) Boolean
         } -> T.Spec (Effects eff) State Unit Action
 spec
-  {authTokenSignal}
+  params
   { globalErrorQueue
   , env
   , getUserQueues
@@ -145,7 +149,7 @@ spec
             void $ T.cotransform _ {user = Just $ User $ u {social = socialLogin}}
       SubmitSecurity -> do
         liftEff $ IxSignal.set true pendingSignal
-        mAuthToken <- liftEff $ IxSignal.get authTokenSignal
+        mAuthToken <- liftEff $ IxSignal.get params.authTokenSignal
         case mAuthToken of
           Just authToken -> do
             mEmail <- liftEff $ IxSignal.get email.signal
@@ -161,12 +165,14 @@ spec
                         { password: passwordString
                         , salt: env.salt
                         }
-                      pure Nothing -- FIXME
-                      -- OneIO.callAsync setUserQueues $ AccessInitIn
-                      --   { token: authToken
-                      --   , subj: User {email,newPassword,oldPassword,fbUserId: Nothing}
-                      --     -- FIXME facebook user id assignment
-                      --   }
+                      -- FIXME assigning new password is a restricted credential set
+                      case state.user of
+                        Nothing -> pure Nothing
+                        Just (User {id,social}) ->
+                          OneIO.callAsync setUserQueues $ AccessInitIn
+                            { token: authToken
+                            , subj: SetUser {id,email,social,oldPassword,newPassword}
+                            }
                     liftEff $ do
                       One.putQueue globalErrorQueue $ case mErr of
                         Nothing -> GlobalErrorSecurity SecuritySaveFailed
@@ -223,6 +229,28 @@ spec
         , updatedQueue: passwordConfirm.updatedQueue
         , errorQueue: passwordConfirmErrorQueue
         }
+      , R.div [RP.style {display: "flex", justifyContent: "space-evenly", paddingTop: "2em", paddingBottom: "2em"}] $
+          case state.user of
+            Nothing -> []
+            Just (User {social}) ->
+              mkSocialLogin params
+                { env
+                , getUnsavedFormData: do
+                    email' <- IxSignal.get email.signal
+                    emailConfirm' <- IxSignal.get emailConfirm.signal
+                    pure $ FacebookLoginUnsavedFormDataSecurity
+                      { email: case email' of
+                          Email.EmailPartial e -> e
+                          Email.EmailBad e -> e
+                          Email.EmailGood e -> Email.toString e
+                      , emailConfirm: case emailConfirm' of
+                          Email.EmailPartial e -> e
+                          Email.EmailBad e -> e
+                          Email.EmailGood e -> Email.toString e
+                      , socialLogin: social
+                      }
+                }
+                social
       , Submit.submit
         { color: Button.secondary
         , variant: Button.raised
@@ -249,7 +277,8 @@ newtype SecurityUnsavedFormData = SecurityUnsavedFormData
 
 
 security :: forall eff siteLinks userDetails
-          . LocalCookingParams siteLinks userDetails (Effects eff)
+          . ToLocation siteLinks
+         => LocalCookingParams siteLinks userDetails (Effects eff)
          -> { globalErrorQueue        :: One.Queue (write :: WRITE) (Effects eff) GlobalError
             , authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
             , getUserQueues           :: GetUserSparrowClientQueues (Effects eff)
