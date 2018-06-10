@@ -4,7 +4,7 @@ import LocalCooking.Spec.Dialogs.Generic (genericDialog)
 import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
-import LocalCooking.Global.Error (GlobalError (GlobalErrorAuthFailure), AuthTokenFailure (AuthTokenLoginFailure))
+import LocalCooking.Global.Error (GlobalError (GlobalErrorAuthFailure), AuthTokenFailure (AuthLoginFailure))
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.AccessToken.Generic (AccessInitIn (..))
@@ -106,7 +106,7 @@ authenticateDialog
               pure (Just hashedPassword)
             Nothing -> do
               liftEff $ do
-                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthTokenLoginFailure)
+                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthLoginFailure)
                 One.putQueue passwordErrorQueue unit
               pure Nothing
     , reset: do

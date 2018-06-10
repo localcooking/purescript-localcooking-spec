@@ -8,7 +8,7 @@ import LocalCooking.Spec.Misc.Social (mkSocialFab)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error
   ( GlobalError (GlobalErrorAuthFailure)
-  , AuthTokenFailure (AuthTokenLoginFailure))
+  , AuthTokenFailure (AuthLoginFailure))
 import LocalCooking.Dependencies.Validate (PasswordVerifyUnauthSparrowClientQueues, PasswordVerifyUnauth (..))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Global.Links.Class (registerLink, class LocalCookingSiteLinks)
@@ -163,7 +163,7 @@ loginDialog
               pure $ Just $ Login {email,password: hashedPassword}
             Nothing -> do
               liftEff $ do
-                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthTokenLoginFailure)
+                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthLoginFailure)
                 One.putQueue passwordErrorQueue unit
               pure Nothing
         _ -> do
