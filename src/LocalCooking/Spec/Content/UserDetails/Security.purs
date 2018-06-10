@@ -47,6 +47,7 @@ import Crypto.Scrypt (SCRYPT)
 
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
+import IxSignal.Extra (onAvailable, getAvailable, getWhen)
 import Queue.Types (readOnly, writeOnly, allowReading)
 import Queue (WRITE, READ)
 import Queue.One as One
@@ -149,37 +150,34 @@ spec
             void $ T.cotransform _ {user = Just $ User $ u {socialLogin = socialLogin}}
       SubmitSecurity -> do
         liftEff $ IxSignal.set true pendingSignal
-        mAuthToken <- liftEff $ IxSignal.get params.authTokenSignal
-        case mAuthToken of
-          Just authToken -> do
-            mEmail <- liftEff $ IxSignal.get email.signal
-            case mEmail of
-              Email.EmailGood email -> do
-                mAuthPass <- liftBase $ OneIO.callAsync authenticateDialogQueue unit
-                case mAuthPass of
-                  Nothing -> pure unit
-                  Just oldPassword -> do
-                    mErr <- liftBase $ do
-                      passwordString <- liftEff (IxSignal.get password.signal)
-                      newPassword <- hashPassword
-                        { password: passwordString
-                        , salt: env.salt
-                        }
-                      -- FIXME assigning new password is a restricted credential set
-                      case state.user of
-                        Nothing -> pure Nothing
-                        Just (User {id,socialLogin}) ->
-                          OneIO.callAsync setUserQueues $ AccessInitIn
-                            { token: authToken
-                            , subj: SetUser {id,email,socialLogin,oldPassword,newPassword}
-                            }
-                    liftEff $ do
-                      One.putQueue globalErrorQueue $ case mErr of
-                        Nothing -> GlobalErrorSecurity SecuritySaveFailed
-                        Just JSONUnit -> GlobalErrorSecurity SecuritySaveSuccess
-                      IxSignal.set false pendingSignal
-              _ -> pure unit
-          _ -> pure unit
+        authToken <- liftBase $ getAvailable params.authTokenSignal
+        let whenEmailGood mX = case mX of
+              Email.EmailGood x -> Just x
+              _ -> Nothing
+        email <- liftBase $ getWhen whenEmailGood email.signal
+        mAuthPass <- liftBase $ OneIO.callAsync authenticateDialogQueue unit
+        case mAuthPass of
+          Nothing -> pure unit
+          Just oldPassword -> do
+            mErr <- liftBase $ do
+              passwordString <- liftEff (IxSignal.get password.signal)
+              newPassword <- hashPassword
+                { password: passwordString
+                , salt: env.salt
+                }
+              -- FIXME assigning new password is a restricted credential set
+              case state.user of
+                Nothing -> pure Nothing
+                Just (User {id,socialLogin}) ->
+                  OneIO.callAsync setUserQueues $ AccessInitIn
+                    { token: authToken
+                    , subj: SetUser {id,email,socialLogin,oldPassword,newPassword}
+                    }
+            liftEff $ do
+              One.putQueue globalErrorQueue $ case mErr of
+                Nothing -> GlobalErrorSecurity SecuritySaveFailed
+                Just JSONUnit -> GlobalErrorSecurity SecuritySaveSuccess
+              IxSignal.set false pendingSignal
 
     render :: T.Render State Unit Action
     render dispatch props state children =
@@ -369,16 +367,16 @@ security
             (\this x -> unsafeCoerceEff $ dispatcher this $ ReceivedUnsavedFormData x)
         $   reactSpec
               { componentDidMount = \this -> do
-                  mAuthToken <- unsafeCoerceEff $ IxSignal.get params.authTokenSignal
-                  case mAuthToken of
-                    Nothing -> unsafeCoerceEff $ log "race condition failed" -- FIXME err out, security is only avail to logind
-                    Just authToken ->
-                      unsafeCoerceEff $ OneIO.callAsyncEff getUserQueues
-                        (\mUser -> case mUser of
-                           Nothing -> pure unit
-                           Just u -> unsafeCoerceEff $ dispatcher this $ GotUser u
-                        )
-                        (AccessInitIn {token: authToken, subj: JSONUnit})
+                  let getUserData authToken =
+                        unsafeCoerceEff $ OneIO.callAsyncEff getUserQueues
+                          (\mUser -> case mUser of
+                            Nothing -> pure unit
+                            Just u -> unsafeCoerceEff $ dispatcher this $ GotUser u
+                          )
+                          (AccessInitIn {token: authToken, subj: JSONUnit})
+                  unsafeCoerceEff $ onAvailable
+                    getUserData
+                    params.authTokenSignal
               }
   in  R.createElement (R.createClass reactSpec') unit []
   where
