@@ -8,7 +8,7 @@ import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorSecurity), SecurityMessage (..))
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
-import LocalCooking.Dependencies.Common (SetUserSparrowClientQueues)
+import LocalCooking.Dependencies.Common (GetUserSparrowClientQueues, SetUserSparrowClientQueues)
 import LocalCooking.Dependencies.AccessToken.Generic (AccessInitIn (..))
 import LocalCooking.Semantics.Common (User (..), SocialLoginForm (..))
 -- import LocalCooking.Client.Dependencies.Security (SecuritySparrowClientQueues, SecurityInitIn' (..), SecurityInitOut' (..))
@@ -58,17 +58,18 @@ import IxQueue as IxQueue
 
 type State =
   { rerender :: Unit
-  , socialLogin :: SocialLoginForm
+  , user :: Maybe User
   }
 
-initialState :: {initSocialLogin :: SocialLoginForm} -> State
-initialState {initSocialLogin} =
+initialState :: State
+initialState =
   { rerender: unit
-  , socialLogin: initSocialLogin
+  , user: Nothing
   }
 
 data Action
   = SubmitSecurity
+  | GotUser User
   | ReceivedUnsavedFormData SecurityUnsavedFormData
   | ReRender
 
@@ -85,6 +86,7 @@ spec :: forall eff siteLinks userDetails
       . LocalCookingParams siteLinks userDetails (Effects eff)
      -> { globalErrorQueue        :: One.Queue (write :: WRITE) (Effects eff) GlobalError
         , env                     :: Env
+        , getUserQueues           :: GetUserSparrowClientQueues (Effects eff)
         , setUserQueues           :: SetUserSparrowClientQueues (Effects eff)
         , authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
         , email ::
@@ -115,6 +117,7 @@ spec
   {authTokenSignal}
   { globalErrorQueue
   , env
+  , getUserQueues
   , setUserQueues
   , authenticateDialogQueue
   , email
@@ -127,11 +130,19 @@ spec
   where
     performAction action props state = case action of
       ReRender -> void $ T.cotransform _ {rerender = unit}
+      GotUser u@(User xs) -> do
+        void $ T.cotransform _ {user = Just u}
+        liftEff $ do
+          One.putQueue email.setQueue (Email.EmailGood xs.email)
+          One.putQueue emailConfirm.setQueue (Email.EmailGood xs.email)
       ReceivedUnsavedFormData (SecurityUnsavedFormData xs@{socialLogin}) -> do
         liftEff $ do
           One.putQueue email.setQueue (Email.EmailPartial xs.email)
           One.putQueue emailConfirm.setQueue (Email.EmailPartial xs.emailConfirm)
-        void $ T.cotransform _ {socialLogin = socialLogin}
+        case state.user of
+          Nothing -> pure unit
+          Just (User u) ->
+            void $ T.cotransform _ {user = Just $ User $ u {social = socialLogin}}
       SubmitSecurity -> do
         liftEff $ IxSignal.set true pendingSignal
         mAuthToken <- liftEff $ IxSignal.get authTokenSignal
@@ -241,6 +252,7 @@ security :: forall eff siteLinks userDetails
           . LocalCookingParams siteLinks userDetails (Effects eff)
          -> { globalErrorQueue        :: One.Queue (write :: WRITE) (Effects eff) GlobalError
             , authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
+            , getUserQueues           :: GetUserSparrowClientQueues (Effects eff)
             , setUserQueues           :: SetUserSparrowClientQueues (Effects eff)
             , env                     :: Env
             , unsavedFormDataQueue    :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
@@ -251,6 +263,7 @@ security
   { globalErrorQueue
   , authenticateDialogQueue
   , env
+  , getUserQueues
   , setUserQueues
   , unsavedFormDataQueue
   } =
@@ -261,6 +274,7 @@ security
             { env
             , globalErrorQueue
             , authenticateDialogQueue
+            , getUserQueues
             , setUserQueues
             , email:
               { signal: emailSignal
@@ -285,7 +299,7 @@ security
               , disabledSignal: submitDisabledSignal
               }
             , pendingSignal
-            } ) (initialState {initSocialLogin: socialLogin})
+            } ) initialState
       submitValue this = do
         mEmail <- IxSignal.get emailSignal
         confirm <- IxSignal.get emailConfirmSignal
@@ -324,12 +338,23 @@ security
         $ Queue.whileMountedOne
             (allowReading unsavedFormDataQueue)
             (\this x -> unsafeCoerceEff $ dispatcher this $ ReceivedUnsavedFormData x)
-            reactSpec
+        $   reactSpec
+              { componentDidMount = \this -> do
+                  mAuthToken <- unsafeCoerceEff $ IxSignal.get params.authTokenSignal
+                  case mAuthToken of
+                    Nothing -> pure unit -- FIXME err out, security is only avail to logind
+                    Just authToken ->
+                      unsafeCoerceEff $ OneIO.callAsyncEff getUserQueues
+                        (\mUser -> case mUser of
+                           Nothing -> pure unit
+                           Just u -> unsafeCoerceEff $ dispatcher this $ GotUser u
+                        )
+                        (AccessInitIn {token: authToken, subj: JSONUnit})
+              }
   in  R.createElement (R.createClass reactSpec') unit []
   where
     emailSignal = unsafePerformEff $ IxSignal.make $ Email.EmailPartial "" 
     emailConfirmSignal = unsafePerformEff $ IxSignal.make $ Email.EmailPartial ""
-    socialLogin = SocialLoginForm {fb: Nothing}
     emailUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     emailConfirmUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     emailSetQueue = unsafePerformEff $ writeOnly <$> One.newQueue

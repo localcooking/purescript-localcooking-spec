@@ -220,6 +220,7 @@ spec
                         params
                         { env
                         , globalErrorQueue: writeOnly globalErrorQueue
+                        , getUserQueues: dependenciesQueues.commonQueues.getUserQueues
                         , setUserQueues: dependenciesQueues.commonQueues.setUserQueues
                         , authenticateDialogQueue: dialogQueues.authenticate.openQueue
                         , unsavedFormDataQueue: templateArgs.security.unsavedFormDataQueue
