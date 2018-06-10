@@ -7,7 +7,8 @@ import LocalCooking.Spec.Common.Form.Submit as Submit
 import LocalCooking.Spec.Misc.Social (mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorSecurity), SecurityMessage (..))
-import LocalCooking.Thermite.Params (LocalCookingParams)
+import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
+import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.Common (GetUserSparrowClientQueues, SetUserSparrowClientQueues)
 import LocalCooking.Dependencies.AccessToken.Generic (AccessInitIn (..))
@@ -22,6 +23,7 @@ import Data.Tuple (Tuple (..))
 import Data.URI.Location (class ToLocation)
 import Data.UUID (GENUUID)
 import Data.Argonaut.JSONUnit (JSONUnit (..))
+import Data.Lens (Lens', Prism', lens, prism')
 import Text.Email.Validate as Email
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff.Ref (REF, Ref)
@@ -60,22 +62,28 @@ import IxQueue as IxQueue
 -- TODO render social login
 
 
-type State =
+type State siteLinks userDetails =
   { rerender :: Unit
   , user :: Maybe User
+    -- represents the local mutable form state
+  , localCooking :: LocalCookingState siteLinks userDetails
+    -- represents the global saved actual state
   }
 
-initialState :: State
-initialState =
+initialState :: forall siteLinks userDetails
+              . LocalCookingState siteLinks userDetails -> State siteLinks userDetails
+initialState localCooking =
   { rerender: unit
   , user: Nothing
+  , localCooking
   }
 
-data Action
+data Action siteLinks userDetails
   = SubmitSecurity
   | GotUser User
   | ReceivedUnsavedFormData SecurityUnsavedFormData
   | ReRender
+  | LocalCookingAction (LocalCookingAction siteLinks userDetails)
 
 
 type Effects eff =
@@ -86,8 +94,20 @@ type Effects eff =
   | eff)
 
 
-spec :: forall eff siteLinks userDetails
-      . ToLocation siteLinks
+getLCState :: forall siteLinks userDetails
+            . Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
+getLCState = lens (_.localCooking) (_ { localCooking = _ })
+
+getLCAction :: forall siteLinks userDetails
+             . Prism' (Action siteLinks userDetails) (LocalCookingAction siteLinks userDetails)
+getLCAction = prism' LocalCookingAction $ case _ of
+  LocalCookingAction x -> Just x
+  _ -> Nothing
+
+
+spec :: forall eff siteLinks userDetails userDetailsLinks
+      . LocalCookingSiteLinks siteLinks userDetailsLinks
+     => ToLocation siteLinks
      => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { globalErrorQueue        :: One.Queue (write :: WRITE) (Effects eff) GlobalError
         , env                     :: Env
@@ -117,7 +137,7 @@ spec :: forall eff siteLinks userDetails
           , disabledSignal :: IxSignal (Effects eff) Boolean
           }
         , pendingSignal            :: IxSignal (Effects eff) Boolean
-        } -> T.Spec (Effects eff) State Unit Action
+        } -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
 spec
   params
   { globalErrorQueue
@@ -140,6 +160,7 @@ spec
         liftEff $ do
           One.putQueue email.setQueue (Email.EmailGood xs.email)
           One.putQueue emailConfirm.setQueue (Email.EmailGood xs.email)
+      LocalCookingAction a -> performActionLocalCooking getLCState a props state
       ReceivedUnsavedFormData (SecurityUnsavedFormData xs@{socialLogin}) -> do
         liftEff $ do
           One.putQueue email.setQueue (Email.EmailPartial xs.email)
@@ -179,7 +200,7 @@ spec
                 Just JSONUnit -> GlobalErrorSecurity SecuritySaveSuccess
               IxSignal.set false pendingSignal
 
-    render :: T.Render State Unit Action
+    render :: T.Render (State siteLinks userDetails) Unit (Action siteLinks userDetails)
     render dispatch props state children =
       [ typography
         { variant: Typography.display1
@@ -274,8 +295,9 @@ newtype SecurityUnsavedFormData = SecurityUnsavedFormData
   }
 
 
-security :: forall eff siteLinks userDetails
-          . ToLocation siteLinks
+security :: forall eff siteLinks userDetails userDetailsLinks
+          . LocalCookingSiteLinks siteLinks userDetailsLinks
+         => ToLocation siteLinks
          => LocalCookingParams siteLinks userDetails (Effects eff)
          -> { globalErrorQueue        :: One.Queue (write :: WRITE) (Effects eff) GlobalError
             , authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
@@ -326,7 +348,7 @@ security
               , disabledSignal: submitDisabledSignal
               }
             , pendingSignal
-            } ) initialState
+            } ) (initialState (unsafePerformEff (initLocalCookingState params)))
       submitValue this = do
         mEmail <- IxSignal.get emailSignal
         confirm <- IxSignal.get emailConfirmSignal
@@ -365,6 +387,11 @@ security
         $ Queue.whileMountedOne
             (allowReading unsavedFormDataQueue)
             (\this x -> unsafeCoerceEff $ dispatcher this $ ReceivedUnsavedFormData x)
+        $ whileMountedLocalCooking
+            params
+            "LocalCooking.Spec.Content.UserDetails.Security"
+            LocalCookingAction
+            (\this -> unsafeCoerceEff <<< dispatcher this)
         $   reactSpec
               { componentDidMount = \this -> do
                   let getUserData authToken =
