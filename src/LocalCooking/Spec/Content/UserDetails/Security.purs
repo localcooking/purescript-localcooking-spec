@@ -146,7 +146,7 @@ spec
         case state.user of
           Nothing -> pure unit
           Just (User u) ->
-            void $ T.cotransform _ {user = Just $ User $ u {social = socialLogin}}
+            void $ T.cotransform _ {user = Just $ User $ u {socialLogin = socialLogin}}
       SubmitSecurity -> do
         liftEff $ IxSignal.set true pendingSignal
         mAuthToken <- liftEff $ IxSignal.get params.authTokenSignal
@@ -168,10 +168,10 @@ spec
                       -- FIXME assigning new password is a restricted credential set
                       case state.user of
                         Nothing -> pure Nothing
-                        Just (User {id,social}) ->
+                        Just (User {id,socialLogin}) ->
                           OneIO.callAsync setUserQueues $ AccessInitIn
                             { token: authToken
-                            , subj: SetUser {id,email,social,oldPassword,newPassword}
+                            , subj: SetUser {id,email,socialLogin,oldPassword,newPassword}
                             }
                     liftEff $ do
                       One.putQueue globalErrorQueue $ case mErr of
@@ -232,7 +232,7 @@ spec
       , R.div [RP.style {display: "flex", justifyContent: "space-evenly", paddingTop: "2em", paddingBottom: "2em"}] $
           case state.user of
             Nothing -> []
-            Just (User {social}) ->
+            Just (User {socialLogin}) ->
               mkSocialLogin params
                 { env
                 , getUnsavedFormData: do
@@ -247,10 +247,10 @@ spec
                           Email.EmailPartial e -> e
                           Email.EmailBad e -> e
                           Email.EmailGood e -> Email.toString e
-                      , socialLogin: social
+                      , socialLogin: socialLogin
                       }
                 }
-                social
+                socialLogin
       , Submit.submit
         { color: Button.secondary
         , variant: Button.raised
