@@ -371,7 +371,7 @@ security
               { componentDidMount = \this -> do
                   mAuthToken <- unsafeCoerceEff $ IxSignal.get params.authTokenSignal
                   case mAuthToken of
-                    Nothing -> pure unit -- FIXME err out, security is only avail to logind
+                    Nothing -> unsafeCoerceEff $ log "race condition failed" -- FIXME err out, security is only avail to logind
                     Just authToken ->
                       unsafeCoerceEff $ OneIO.callAsyncEff getUserQueues
                         (\mUser -> case mUser of
