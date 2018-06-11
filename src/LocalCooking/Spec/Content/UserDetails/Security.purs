@@ -8,9 +8,10 @@ import LocalCooking.Spec.Misc.Social (mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorSecurity), SecurityMessage (..))
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
+import LocalCooking.Global.User.Class (class UserDetails, getUser)
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
-import LocalCooking.Dependencies.Common (GetUserSparrowClientQueues, SetUserSparrowClientQueues)
+import LocalCooking.Dependencies.Common (UserDeltaIn (UserDeltaInSetUser))
 import LocalCooking.Dependencies.AccessToken.Generic (AccessInitIn (..))
 import LocalCooking.Semantics.Common (User (..), SetUser (..), SocialLoginForm (..))
 -- import LocalCooking.Client.Dependencies.Security (SecuritySparrowClientQueues, SecurityInitIn' (..), SecurityInitOut' (..))
@@ -26,6 +27,7 @@ import Data.Argonaut.JSONUnit (JSONUnit (..))
 import Data.Lens (Lens', Prism', lens, prism')
 import Text.Email.Validate as Email
 import Control.Monad.Base (liftBase)
+import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (REF, Ref)
 -- import Control.Monad.Eff.Ref.Extra (takeRef)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
@@ -71,16 +73,16 @@ type State siteLinks userDetails =
   }
 
 initialState :: forall siteLinks userDetails
-              . LocalCookingState siteLinks userDetails -> State siteLinks userDetails
+              . UserDetails userDetails
+             => LocalCookingState siteLinks userDetails -> State siteLinks userDetails
 initialState localCooking =
   { rerender: unit
-  , user: Nothing
+  , user: getUser <$> localCooking.userDetails
   , localCooking
   }
 
 data Action siteLinks userDetails
   = SubmitSecurity
-  | GotUser User
   | ReceivedUnsavedFormData SecurityUnsavedFormData
   | ReRender
   | LocalCookingAction (LocalCookingAction siteLinks userDetails)
@@ -106,14 +108,14 @@ getLCAction = prism' LocalCookingAction $ case _ of
 
 
 spec :: forall eff siteLinks userDetails userDetailsLinks
-      . LocalCookingSiteLinks siteLinks userDetailsLinks
+      . UserDetails userDetails
+     => LocalCookingSiteLinks siteLinks userDetailsLinks
      => ToLocation siteLinks
      => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { globalErrorQueue        :: One.Queue (write :: WRITE) (Effects eff) GlobalError
         , env                     :: Env
-        , getUserQueues           :: GetUserSparrowClientQueues (Effects eff)
-        , setUserQueues           :: SetUserSparrowClientQueues (Effects eff)
         , authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
+        , userDeltaIn             :: UserDeltaIn -> Eff (Effects eff) Unit
         , email ::
           { signal        :: IxSignal (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
@@ -142,9 +144,8 @@ spec
   params
   { globalErrorQueue
   , env
-  , getUserQueues
-  , setUserQueues
   , authenticateDialogQueue
+  , userDeltaIn
   , email
   , emailConfirm
   , password
@@ -155,11 +156,6 @@ spec
   where
     performAction action props state = case action of
       ReRender -> void $ T.cotransform _ {rerender = unit}
-      GotUser u@(User xs) -> do
-        void $ T.cotransform _ {user = Just u}
-        liftEff $ do
-          One.putQueue email.setQueue (Email.EmailGood xs.email)
-          One.putQueue emailConfirm.setQueue (Email.EmailGood xs.email)
       LocalCookingAction a -> performActionLocalCooking getLCState a props state
       ReceivedUnsavedFormData (SecurityUnsavedFormData xs@{socialLogin}) -> do
         liftEff $ do
@@ -180,24 +176,23 @@ spec
         case mAuthPass of
           Nothing -> pure unit
           Just oldPassword -> do
-            mErr <- liftBase $ do
-              passwordString <- liftEff (IxSignal.get password.signal)
-              newPassword <- hashPassword
-                { password: passwordString
-                , salt: env.salt
-                }
-              -- FIXME assigning new password is a restricted credential set
-              case state.user of
-                Nothing -> pure Nothing
-                Just (User {id,socialLogin}) ->
-                  OneIO.callAsync setUserQueues $ AccessInitIn
-                    { token: authToken
-                    , subj: SetUser {id,email,socialLogin,oldPassword,newPassword}
-                    }
+            passwordString <- liftEff (IxSignal.get password.signal)
+            newPassword <- liftBase $ hashPassword
+              { password: passwordString
+              , salt: env.salt
+              }
+            -- FIXME assigning new password is a restricted credential set
+            case state.user of
+              Nothing -> pure unit
+              Just (User {id,socialLogin}) ->
+                liftEff $ userDeltaIn
+                        $ UserDeltaInSetUser
+                        $ SetUser {id,email,socialLogin,oldPassword,newPassword}
             liftEff $ do
-              One.putQueue globalErrorQueue $ case mErr of
-                Nothing -> GlobalErrorSecurity SecuritySaveFailed
-                Just JSONUnit -> GlobalErrorSecurity SecuritySaveSuccess
+              -- One.putQueue globalErrorQueue $ case mErr of
+              --   Nothing -> GlobalErrorSecurity SecuritySaveFailed
+              --   Just JSONUnit -> GlobalErrorSecurity SecuritySaveSuccess
+              -- FIXME threaded...?
               IxSignal.set false pendingSignal
 
     render :: T.Render (State siteLinks userDetails) Unit (Action siteLinks userDetails)
@@ -296,13 +291,13 @@ newtype SecurityUnsavedFormData = SecurityUnsavedFormData
 
 
 security :: forall eff siteLinks userDetails userDetailsLinks
-          . LocalCookingSiteLinks siteLinks userDetailsLinks
+          . UserDetails userDetails
+         => LocalCookingSiteLinks siteLinks userDetailsLinks
          => ToLocation siteLinks
          => LocalCookingParams siteLinks userDetails (Effects eff)
          -> { globalErrorQueue        :: One.Queue (write :: WRITE) (Effects eff) GlobalError
             , authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
-            , getUserQueues           :: GetUserSparrowClientQueues (Effects eff)
-            , setUserQueues           :: SetUserSparrowClientQueues (Effects eff)
+            , userDeltaIn             :: UserDeltaIn -> Eff (Effects eff) Unit
             , env                     :: Env
             , unsavedFormDataQueue    :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
             }
@@ -312,8 +307,7 @@ security
   { globalErrorQueue
   , authenticateDialogQueue
   , env
-  , getUserQueues
-  , setUserQueues
+  , userDeltaIn
   , unsavedFormDataQueue
   } =
   let {spec: reactSpec, dispatcher} =
@@ -323,8 +317,7 @@ security
             { env
             , globalErrorQueue
             , authenticateDialogQueue
-            , getUserQueues
-            , setUserQueues
+            , userDeltaIn
             , email:
               { signal: emailSignal
               , updatedQueue: emailUpdatedQueue
@@ -392,19 +385,19 @@ security
             "LocalCooking.Spec.Content.UserDetails.Security"
             LocalCookingAction
             (\this -> unsafeCoerceEff <<< dispatcher this)
-        $   reactSpec
-              { componentDidMount = \this -> do
-                  let getUserData authToken =
-                        unsafeCoerceEff $ OneIO.callAsyncEff getUserQueues
-                          (\mUser -> case mUser of
-                            Nothing -> pure unit
-                            Just u -> unsafeCoerceEff $ dispatcher this $ GotUser u
-                          )
-                          (AccessInitIn {token: authToken, subj: JSONUnit})
-                  unsafeCoerceEff $ onAvailable
-                    getUserData
-                    params.authTokenSignal
-              }
+            reactSpec
+              -- { componentDidMount = \this -> do
+              --     let getUserData authToken =
+              --           unsafeCoerceEff $ OneIO.callAsyncEff getUserQueues
+              --             (\mUser -> case mUser of
+              --               Nothing -> pure unit
+              --               Just u -> unsafeCoerceEff $ dispatcher this $ GotUser u
+              --             )
+              --             (AccessInitIn {token: authToken, subj: JSONUnit})
+              --     unsafeCoerceEff $ onAvailable
+              --       getUserData
+              --       params.authTokenSignal
+              -- }
   in  R.createElement (R.createClass reactSpec') unit []
   where
     emailSignal = unsafePerformEff $ IxSignal.make $ Email.EmailPartial "" 

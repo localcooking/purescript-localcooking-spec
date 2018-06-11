@@ -10,6 +10,7 @@ import LocalCooking.Common.User.Password (HashedPassword)
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, initLocalCookingState, performActionLocalCooking, LocalCookingAction, whileMountedLocalCooking)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn (AuthTokenDeltaInLogout))
+import LocalCooking.Dependencies.Common (UserDeltaIn)
 import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.User.Class (class UserDetails)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks, getUserDetailsLink, userDetailsLink, userDetailsGeneralLink, userDetailsSecurityLink, registerLink, rootLink)
@@ -109,6 +110,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         , dependenciesQueues :: DependenciesQueues siteQueues (Effects eff)
         , authTokenInitIn    :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , authTokenDeltaIn   :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
+        , userDeltaIn        :: UserDeltaIn -> Eff (Effects eff) Unit
         , dialogQueues :: AllDialogs (Effects eff)
         , templateArgs ::
           { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
@@ -134,6 +136,7 @@ spec
   , dependenciesQueues
   , authTokenInitIn
   , authTokenDeltaIn
+  , userDeltaIn
   , dialogQueues
   , templateArgs
   } = T.simpleSpec performAction render
@@ -220,8 +223,7 @@ spec
                         params
                         { env
                         , globalErrorQueue: writeOnly globalErrorQueue
-                        , getUserQueues: dependenciesQueues.commonQueues.getUserQueues
-                        , setUserQueues: dependenciesQueues.commonQueues.setUserQueues
+                        , userDeltaIn
                         , authenticateDialogQueue: dialogQueues.authenticate.openQueue
                         , unsavedFormDataQueue: templateArgs.security.unsavedFormDataQueue
                         }
@@ -296,6 +298,7 @@ content :: forall eff siteLinks userDetailsLinks userDetails siteQueues
            , dependenciesQueues :: DependenciesQueues siteQueues (Effects eff)
            , authTokenInitIn    :: AuthTokenInitIn -> Eff (Effects eff) Unit
            , authTokenDeltaIn   :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
+           , userDeltaIn        :: UserDeltaIn -> Eff (Effects eff) Unit
            , dialogQueues :: AllDialogs (Effects eff)
            , templateArgs ::
               { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
@@ -321,6 +324,7 @@ content
   , dependenciesQueues
   , authTokenInitIn
   , authTokenDeltaIn
+  , userDeltaIn
   , dialogQueues
   , templateArgs
   } =
@@ -333,6 +337,7 @@ content
           , dependenciesQueues
           , authTokenInitIn
           , authTokenDeltaIn
+          , userDeltaIn
           , dialogQueues
           , templateArgs
           }

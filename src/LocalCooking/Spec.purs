@@ -15,6 +15,7 @@ import LocalCooking.Spec.Snackbar (messages)
 import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
+import LocalCooking.Dependencies.Common (UserInitIn, UserDeltaIn)
 import LocalCooking.Semantics.Common (Login)
 import LocalCooking.Common.User.Password (HashedPassword)
 import LocalCooking.Spec.Content (content)
@@ -94,6 +95,8 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         , dependenciesQueues  :: DependenciesQueues siteQueues (Effects eff)
         , authTokenInitIn     :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , authTokenDeltaIn    :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
+        , userInitIn          :: UserInitIn -> Eff (Effects eff) Unit
+        , userDeltaIn         :: UserDeltaIn -> Eff (Effects eff) Unit
         -- FIXME ambiguate dependencies APIs
         , dialogQueues :: AllDialogs (Effects eff)
         , templateArgs ::
@@ -128,6 +131,8 @@ spec
   , dependenciesQueues
   , authTokenInitIn
   , authTokenDeltaIn
+  , userInitIn
+  , userDeltaIn
   , dialogQueues
   , templateArgs
   } = T.simpleSpec performAction render
@@ -151,6 +156,7 @@ spec
         , dependenciesQueues
         , authTokenInitIn
         , authTokenDeltaIn
+        , userDeltaIn
         , dialogQueues
         , templateArgs:
           { content: templateArgs.content
@@ -217,8 +223,10 @@ app :: forall eff siteLinks userDetailsLinks userDetails siteQueues
          }
        , dependenciesQueues :: DependenciesQueues siteQueues (Effects eff)
        -- FIXME TODO restrict authTokenQueues from being visible
-       , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit
+       , authTokenInitIn  :: AuthTokenInitIn -> Eff (Effects eff) Unit
        , authTokenDeltaIn :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
+       , userInitIn       :: UserInitIn -> Eff (Effects eff) Unit
+       , userDeltaIn      :: UserDeltaIn -> Eff (Effects eff) Unit
        , templateArgs ::
           { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
           , topbar ::
@@ -253,6 +261,8 @@ app
   , dependenciesQueues
   , authTokenInitIn
   , authTokenDeltaIn
+  , userInitIn
+  , userDeltaIn
   , templateArgs
   } =
   let {spec: reactSpec, dispatcher} =
@@ -264,6 +274,8 @@ app
           , dependenciesQueues
           , authTokenInitIn
           , authTokenDeltaIn
+          , userInitIn
+          , userDeltaIn
           , dialogQueues:
             { login:
               { openQueue: loginDialogQueue
