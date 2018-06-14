@@ -91,7 +91,7 @@ authenticateDialog
             , errorQueue: passwordErrorQueue
             }
           ]
-    , obtain: do
+    , obtain: \_ -> do
       mAuthToken <- liftEff (IxSignal.get authTokenSignal)
       case mAuthToken of
         Nothing -> pure Nothing

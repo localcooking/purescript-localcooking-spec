@@ -149,7 +149,7 @@ loginDialog
               , mkSocialFab facebookClientId "#dd4e40" "#c13627" googleIcon false Nothing
               ]
           ]
-    , obtain: do
+    , obtain: \_ -> do
       mEmail <- liftEff (IxSignal.get emailSignal)
       case mEmail of
         Email.EmailGood email -> do

@@ -61,7 +61,7 @@ privacyPolicyDialog
         , RP.style {width: "100%", border: "1px solid black"}
         ] []
       ]
-    , obtain: pure (Just unit)
+    , obtain: \_ -> pure (Just unit)
     , reset: pure unit
     }
   }

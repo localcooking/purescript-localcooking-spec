@@ -98,7 +98,7 @@ spec :: forall eff siteLinks userDetails userDetailsLinks input output
             { submitDisabled :: Boolean -> Eff (Effects eff) Unit
             , input          :: input
             } -> Array R.ReactElement
-          , obtain    :: Aff (Effects eff) (Maybe output)
+          , obtain    :: input -> Aff (Effects eff) (Maybe output)
           , reset     :: Eff (Effects eff) Unit
           }
         , buttons ::
@@ -134,20 +134,23 @@ spec
         liftBase $ delay $ Milliseconds 2000.0
         liftEff content.reset
       Submit -> do
-        case pendingSignal of
+        case state.open of
           Nothing -> pure unit
-          Just p -> liftEff (IxSignal.set true p)
-        mOutput <- liftBase content.obtain
-        case mOutput of
-          Nothing ->
+          Just input -> do
             case pendingSignal of
               Nothing -> pure unit
-              Just p -> liftEff (IxSignal.set false p)
-          Just output -> do
-            liftEff (One.putQueue dialogOutputQueue (Just output))
-            case closeQueue of
-              Nothing -> performAction Close props state
-              Just closeQueue' -> pure unit
+              Just p -> liftEff (IxSignal.set true p)
+            mOutput <- liftBase (content.obtain input)
+            case mOutput of
+              Nothing ->
+                case pendingSignal of
+                  Nothing -> pure unit
+                  Just p -> liftEff (IxSignal.set false p)
+              Just output -> do
+                liftEff (One.putQueue dialogOutputQueue (Just output))
+                case closeQueue of
+                  Nothing -> performAction Close props state
+                  Just closeQueue' -> pure unit
       LocalCookingAction a -> performActionLocalCooking getLCState a props state
 
     render :: T.Render (State input siteLinks userDetails) Unit (Action input siteLinks userDetails)
@@ -237,7 +240,7 @@ genericDialog :: forall eff siteLinks userDetails userDetailsLinks input output
                      { submitDisabled :: Boolean -> Eff (Effects eff) Unit
                      , input          :: input
                      } -> Array R.ReactElement
-                   , obtain    :: Aff (Effects eff) (Maybe output)
+                   , obtain    :: input -> Aff (Effects eff) (Maybe output)
                    , reset     :: Eff (Effects eff) Unit
                    }
                  }
