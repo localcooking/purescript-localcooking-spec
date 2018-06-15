@@ -3,23 +3,20 @@ module LocalCooking.Spec.Snackbar where
 import LocalCooking.Global.Error (GlobalError, printGlobalError)
 
 import Prelude
-
-import Thermite as T
-import React as R
-import React.DOM as R
-import React.Queue.WhileMounted as Queue
 import Data.Nullable (toNullable)
 import Data.Time.Duration (Milliseconds (..))
 import Data.Maybe (Maybe (..))
 import Data.Array as Array
-import Data.Generic (class Generic, gShow)
 import Control.Monad.Base (liftBase)
 import Control.Monad.Aff (delay)
 import Control.Monad.Eff.Uncurried (mkEffFn2, mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 import Control.Monad.Eff.Ref (REF)
-import Control.Monad.Eff.Console (log)
-import Control.Monad.Eff.Class (liftEff)
+
+import Thermite as T
+import React (ReactElement, createClass, createElement) as R
+import React.DOM (div, text) as R
+import React.Queue.WhileMounted as Queue
 
 import MaterialUI.Snackbar (snackbar)
 import MaterialUI.IconButton (iconButton)

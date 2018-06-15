@@ -1,46 +1,38 @@
 module LocalCooking.Spec.Content.UserDetails.Security where
 
 import LocalCooking.Spec.Common.Pending (pending)
-import LocalCooking.Spec.Common.Form.Email as Email
+import LocalCooking.Spec.Common.Form.Email (EmailState (..), email) as Email
 import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Common.Form.Submit as Submit
 import LocalCooking.Spec.Misc.Social (mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
-import LocalCooking.Global.Error (GlobalError (GlobalErrorSecurity), SecurityMessage (..))
+import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 import LocalCooking.Global.User.Class (class UserDetails, getUser)
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.Common (UserDeltaIn (UserDeltaInSetUser))
-import LocalCooking.Dependencies.AccessToken.Generic (AccessInitIn (..))
-import LocalCooking.Semantics.Common (User (..), SetUser (..), SocialLoginForm (..))
--- import LocalCooking.Client.Dependencies.Security (SecuritySparrowClientQueues, SecurityInitIn' (..), SecurityInitOut' (..))
--- import LocalCooking.Client.Dependencies.AccessToken.Generic (AuthInitIn (..), AuthInitOut (..))
+import LocalCooking.Semantics.Common (User (..), SetUser (..), SocialLoginForm)
 import Facebook.State (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataSecurity))
 
 import Prelude
 import Data.Maybe (Maybe (..))
-import Data.Tuple (Tuple (..))
 import Data.URI.Location (class ToLocation)
 import Data.UUID (GENUUID)
-import Data.Argonaut.JSONUnit (JSONUnit (..))
 import Data.Lens (Lens', Prism', lens, prism')
-import Text.Email.Validate as Email
+import Text.Email.Validate (toString) as Email
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Ref (REF, Ref)
--- import Control.Monad.Eff.Ref.Extra (takeRef)
+import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createElement) as R
+import React.DOM (div, text) as R
 import React.DOM.Props as RP
 import React.Queue.WhileMounted as Queue
-import React.Signal.WhileMounted as Signal
 
 import MaterialUI.Types (createStyles)
 import MaterialUI.Typography (typography)
@@ -51,7 +43,7 @@ import Crypto.Scrypt (SCRYPT)
 
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import IxSignal.Extra (onAvailable, getAvailable, getWhen)
+import IxSignal.Extra (getAvailable, getWhen)
 import Queue.Types (readOnly, writeOnly, allowReading)
 import Queue (WRITE, READ)
 import Queue.One as One

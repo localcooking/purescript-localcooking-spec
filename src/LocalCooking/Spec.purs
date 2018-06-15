@@ -5,20 +5,20 @@ import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 import LocalCooking.Global.User.Class (class UserDetails)
 import LocalCooking.Spec.Content.UserDetails.Security (SecurityUnsavedFormData)
 import LocalCooking.Spec.Content.Register (RegisterUnsavedFormData)
+import LocalCooking.Spec.Content (content)
 import LocalCooking.Spec.Topbar (topbar)
 import LocalCooking.Spec.Types.Env (Env)
-import LocalCooking.Spec.Types.Params
-  ( LocalCookingParams, LocalCookingState, LocalCookingAction
-  , performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
 import LocalCooking.Spec.Dialogs (AllDialogs, dialogs)
 import LocalCooking.Spec.Snackbar (messages)
 import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
+import LocalCooking.Thermite.Params
+  ( LocalCookingParams, LocalCookingState, LocalCookingAction
+  , performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Dependencies.Common (UserInitIn, UserDeltaIn)
 import LocalCooking.Semantics.Common (Login)
 import LocalCooking.Common.User.Password (HashedPassword)
-import LocalCooking.Spec.Content (content)
 
 import Prelude
 import Data.URI.Location (Location, class ToLocation)
@@ -33,10 +33,8 @@ import Control.Monad.Eff.Now (NOW)
 import Control.Monad.Eff.Timer (TIMER)
 
 import Thermite as T
-import React as R
-import React.DOM as R
-import React.DOM.Props as RP
-import React.DOM.SVG as RS
+import React (ReactElement, ReactThis, ReactSpec) as R
+import React.DOM (div) as R
 import MaterialUI.MuiThemeProvider (ColorPalette, muiThemeProvider, createMuiTheme)
 import MaterialUI.CssBaseline (cssBaseline)
 import DOM (DOM)
@@ -47,7 +45,6 @@ import Queue.Types (writeOnly, readOnly)
 import Queue (READ, WRITE)
 import Queue.One as One
 import Queue.One.Aff as OneIO
-import IxSignal.Internal as IxSignal
 
 
 

@@ -14,8 +14,7 @@ import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Global.Links.Class (registerLink, class LocalCookingSiteLinks)
 import LocalCooking.Common.User.Password (hashPassword)
 import LocalCooking.Semantics.Common (Login (..))
-import Facebook.Types (FacebookClientId)
-import Facebook.Call (FacebookLoginLink (..), facebookLoginLinkToURI)
+import Facebook.Call (FacebookLoginLink (..))
 import Facebook.State (FacebookLoginState (..))
 
 import Prelude
@@ -25,21 +24,19 @@ import Data.URI.Location (class ToLocation, toLocation)
 import Data.UUID (genUUID, GENUUID)
 import Data.Argonaut.JSONUnit (JSONUnit (..))
 import Control.Monad.Base (liftBase)
-import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff, unsafePerformEff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Class (liftEff)
 
-import React as R
-import React.DOM as R
+import React (ReactElement) as R
+import React.DOM (div, text) as R
 import React.DOM.Props as RP
 import React.DOM.Props.PreventDefault (preventDefault)
 import React.Icons (facebookIcon, twitterIcon, googleIcon)
 import DOM (DOM)
 
-import MaterialUI.Types (createStyles)
 import MaterialUI.Button (button)
 import MaterialUI.Button as Button
 import Crypto.Scrypt (SCRYPT)

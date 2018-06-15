@@ -1,49 +1,37 @@
 module LocalCooking.Spec.Content.Register where
 
 import LocalCooking.Spec.Common.Pending (pending)
-import LocalCooking.Spec.Common.Form.Email as Email
+import LocalCooking.Spec.Common.Form.Email (EmailState (..), email) as Email
 import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Common.Form.Submit as Submit
 import LocalCooking.Spec.Common.Form.ReCaptcha (reCaptcha)
-import LocalCooking.Spec.Misc.Social (mkSocialFab, mkSocialLogin)
+import LocalCooking.Spec.Misc.Social (mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorRegister))
-import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Dependencies.Common (RegisterSparrowClientQueues)
-import LocalCooking.Semantics.Common (Register (..), RegisterError (..), SocialLoginForm (..))
+import LocalCooking.Semantics.Common (Register (..), SocialLoginForm (..))
 import LocalCooking.Common.User.Password (hashPassword)
 import Google.ReCaptcha (ReCaptchaResponse)
-import Facebook.Call (FacebookLoginLink (..), facebookLoginLinkToURI)
-import Facebook.State (FacebookLoginState (..), FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataRegister))
-import Facebook.Types (FacebookUserId, FacebookClientId)
+import Facebook.State (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataRegister))
 
 import Prelude
-import Data.Maybe (Maybe (..), isJust)
+import Data.Maybe (Maybe (..))
 import Data.UUID (GENUUID)
-import Data.URI.URI (print) as URI
-import Data.URI.Location (class ToLocation, toLocation)
-import Data.Time.Duration (Milliseconds (..))
-import Data.Argonaut.JSONUnit (JSONUnit (..))
-import Text.Email.Validate as Email
+import Data.URI.Location (class ToLocation)
+import Text.Email.Validate (toString) as Email
 import Control.Monad.Base (liftBase)
-import Control.Monad.Aff (delay)
-import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Ref (REF, Ref)
--- import Control.Monad.Eff.Ref.Extra (takeRef)
+import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
-import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Timer (TIMER)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createElement) as R
+import React.DOM (br, div, text) as R
 import React.DOM.Props as RP
 import React.Queue.WhileMounted as Queue
-import React.Icons (facebookIcon, twitterIcon, googleIcon)
 
 import MaterialUI.Types (createStyles)
 import MaterialUI.Typography (typography)
@@ -51,7 +39,6 @@ import MaterialUI.Typography as Typography
 import MaterialUI.Divider (divider)
 import MaterialUI.Grid (grid)
 import MaterialUI.Grid as Grid
-import MaterialUI.Button (button)
 import MaterialUI.Button as Button
 import Crypto.Scrypt (SCRYPT)
 
@@ -90,7 +77,6 @@ type Effects eff =
   , exception :: EXCEPTION
   , uuid      :: GENUUID
   , timer     :: TIMER
-  -- , console   :: CONSOLE
   | eff)
 
 

@@ -21,9 +21,8 @@ import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Class (liftEff)
 
-import React as R
-import React.DOM as R
-import React.DOM.Props as RP
+import React (ReactElement) as R
+import React.DOM (text) as R
 import DOM (DOM)
 
 import Crypto.Scrypt (SCRYPT)

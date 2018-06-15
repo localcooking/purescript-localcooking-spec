@@ -4,45 +4,34 @@ import LocalCooking.Spec.Content.UserDetails.Security (security, SecurityUnsaved
 import LocalCooking.Spec.Content.Register (register, RegisterUnsavedFormData)
 import LocalCooking.Spec.Misc.Flags.USA (usaFlag, usaFlagViewBox)
 import LocalCooking.Spec.Misc.Flags.Colorado (coloradoFlag, coloradoFlagViewBox)
-import LocalCooking.Spec.Types.Env (Env (..))
+import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Dialogs (AllDialogs)
-import LocalCooking.Common.User.Password (HashedPassword)
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, initLocalCookingState, performActionLocalCooking, LocalCookingAction, whileMountedLocalCooking)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn (AuthTokenDeltaInLogout))
 import LocalCooking.Dependencies.Common (UserDeltaIn)
 import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.User.Class (class UserDetails)
-import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks, getUserDetailsLink, userDetailsLink, userDetailsGeneralLink, userDetailsSecurityLink, registerLink, rootLink)
-import LocalCooking.Semantics.Common (Login)
-import Facebook.State (FacebookLoginUnsavedFormData)
+import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks, getUserDetailsLink, userDetailsLink, userDetailsGeneralLink, userDetailsSecurityLink, registerLink)
 
 import Prelude
-import Data.URI.Location (Location, class ToLocation)
 import Data.UUID (GENUUID)
+import Data.URI.Location (class ToLocation)
 import Data.Maybe (Maybe (..))
-import Data.Either (Either (..))
 import Data.Lens (Lens', Prism', lens, prism')
-import Data.Generic (class Generic)
-import Text.Email.Validate (EmailAddress)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
-import Control.Monad.Eff.Ref (REF, Ref)
+import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.Eff.Now (NOW)
-import Control.Monad.Eff.Timer (TIMER, setTimeout)
-import Control.Monad.Base (liftBase)
+import Control.Monad.Eff.Timer (TIMER)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createElement) as R
+import React.DOM (div, main, text) as R
 import React.DOM.Props as RP
 import React.DOM.SVG as RS
-import MaterialUI.MuiThemeProvider (ColorPalette, muiThemeProvider, createMuiTheme)
-import MaterialUI.CssBaseline (cssBaseline)
+import MaterialUI.MuiThemeProvider (ColorPalette)
 import MaterialUI.Paper (paper)
 import MaterialUI.Divider (divider)
 import MaterialUI.Typography (typography)
@@ -53,17 +42,13 @@ import MaterialUI.List (list)
 import MaterialUI.ListItem (listItem)
 import MaterialUI.ListItemText (listItemText)
 import MaterialUI.Types (createStyles)
-import DOM (DOM)
-import DOM.HTML.Types (HISTORY)
 import DOM.HTML.Window.Extra (WindowSize (Laptop))
 import Browser.WebStorage (WEB_STORAGE)
 import Crypto.Scrypt (SCRYPT)
 
-import Queue.Types (writeOnly, readOnly)
+import Queue.Types (writeOnly)
 import Queue (READ, WRITE)
 import Queue.One as One
-import Queue.One.Aff as OneIO
-import IxSignal.Internal as IxSignal
 
 
 

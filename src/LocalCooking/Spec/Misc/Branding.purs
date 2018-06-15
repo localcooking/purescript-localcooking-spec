@@ -1,8 +1,8 @@
 module LocalCooking.Spec.Misc.Branding where
 
 
-import React as R
-import React.DOM.SVG as R
+import React (ReactElement) as R
+import React.DOM.SVG (path) as R
 import React.DOM.Props as RP
 
 

@@ -17,7 +17,6 @@ import Prelude
 import Data.Maybe (Maybe)
 import Data.UUID (GENUUID)
 import Data.URI.Location (class ToLocation)
-import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import React as R
@@ -25,7 +24,6 @@ import DOM (DOM)
 import Crypto.Scrypt (SCRYPT)
 
 import Queue (WRITE)
-import Queue.Types (writeOnly)
 import Queue.One as One
 import Queue.One.Aff as OneIO
 

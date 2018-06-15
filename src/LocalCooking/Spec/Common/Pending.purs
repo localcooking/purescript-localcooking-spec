@@ -7,8 +7,8 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createElement) as R
+import React.DOM (div) as R
 import React.DOM.Props as RP
 import React.Signal.WhileMounted as Signal
 

@@ -11,8 +11,7 @@ import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createElement) as R
 import React.Queue.WhileMounted as Queue
 
 import MaterialUI.TextField (textField)

@@ -9,8 +9,8 @@ import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Control.Monad.Eff.Uncurried (mkEffFn2)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createClassStateless', createElement) as R
+import React.DOM (fieldset, legend, text) as R
 
 import MaterialUI.Typography (typography)
 import MaterialUI.Typography as Typography

@@ -4,10 +4,9 @@ import LocalCooking.Common.AccessToken.Auth (AuthToken)
 
 import Prelude
 import Data.Maybe (Maybe)
-import Data.Either (Either (..))
 import Data.URI.URI (URI)
 import Data.URI.Location (Location)
-import Data.Lens (Lens', Prism', review, clonePrism, matching, (%~))
+import Data.Lens (Lens', (%~))
 import Data.UUID (GENUUID)
 import Data.Generic (class Generic, gShow)
 import Control.Monad.Eff (Eff)
@@ -81,7 +80,7 @@ type Effects eff =
 
 
 -- | Enact modifications to state
-performActionLocalCooking :: forall siteLinks userDetails eff state action props
+performActionLocalCooking :: forall siteLinks userDetails eff state props
                            . Lens' state (LocalCookingState siteLinks userDetails)
                           -> T.PerformAction eff state props (LocalCookingAction siteLinks userDetails)
 performActionLocalCooking getLCState a props state =

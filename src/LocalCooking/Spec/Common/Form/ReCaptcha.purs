@@ -9,8 +9,7 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createElement) as R
 import React.ReCaptcha as RG
 
 import IxSignal.Internal (IxSignal)

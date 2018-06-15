@@ -4,13 +4,11 @@ import LocalCooking.Global.Links.Class
   (class LocalCookingSiteLinks, rootLink, getUserDetailsLink, userDetailsLink)
 import LocalCooking.Global.User.Class
   (class UserDetails, getUser)
-import LocalCooking.Common.AccessToken.Auth (AuthToken)
 import LocalCooking.Semantics.Common (Login, User (..))
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn (AuthTokenInitInLogin))
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
 
 import Prelude
-import Data.URI (URI)
 import Data.URI.URI (print) as URI
 import Data.URI.Location (Location, class ToLocation, toLocation)
 import Data.UUID (GENUUID)
@@ -26,8 +24,8 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Class (liftEff)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createElement) as R
+import React.DOM (div, img, text) as R
 import React.DOM.Props as RP
 import React.DOM.Props.PreventDefault (preventDefault)
 import DOM.HTML.Window.Extra (WindowSize (..))
@@ -44,7 +42,6 @@ import MaterialUI.Icons.Menu (menuIcon)
 
 import Queue.One (WRITE, Queue, putQueue)
 import Queue.One.Aff as OneIO
-import IxSignal.Internal (IxSignal)
 
 
 

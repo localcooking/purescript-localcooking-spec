@@ -1,9 +1,7 @@
 module LocalCooking.Spec.Misc.Flags.Colorado where
 
-import Prelude (show)
-import React as R
-import React.DOM as RD
-import React.DOM.SVG as R
+import React (ReactElement) as R
+import React.DOM.SVG (circle, path, rect) as R
 import React.DOM.Props as RP
 
 

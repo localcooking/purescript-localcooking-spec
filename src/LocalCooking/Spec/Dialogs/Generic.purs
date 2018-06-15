@@ -1,6 +1,5 @@
 module LocalCooking.Spec.Dialogs.Generic where
 
-import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Common.Pending (pending)
 import LocalCooking.Spec.Common.Form.Submit as Submit
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingAction, LocalCookingState, performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
@@ -22,8 +21,8 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Class (liftEff)
 
 import Thermite as T
-import React as R
-import React.DOM as R
+import React (ReactElement, createClass, createElement) as R
+import React.DOM (text) as R
 import React.Queue.WhileMounted as Queue
 import DOM (DOM)
 import DOM.HTML.Window.Extra (WindowSize (..))
@@ -44,7 +43,6 @@ import IxQueue (IxQueue)
 import IxQueue as IxQueue
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import Partial.Unsafe (unsafePartial)
 
 
 

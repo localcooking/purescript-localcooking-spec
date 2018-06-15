@@ -1,11 +1,9 @@
 module LocalCooking.Spec.Dialogs.PrivacyPolicy where
 
 import LocalCooking.Spec.Dialogs.Generic (genericDialog)
-import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Links.Internal (PolicyLinks (..))
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
-import LocalCooking.Global.Error (GlobalError)
 
 import Prelude
 import Data.URI.URI (print) as URI
@@ -15,13 +13,11 @@ import Data.Maybe (Maybe (..))
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 
-import React as R
-import React.DOM as R
+import React (ReactElement) as R
+import React.DOM (iframe) as R
 import React.DOM.Props as RP
 import DOM (DOM)
 
-import Queue (WRITE)
-import Queue.One as One
 import Queue.One.Aff as OneIO
 
 

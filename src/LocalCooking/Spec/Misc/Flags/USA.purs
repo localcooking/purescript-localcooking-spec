@@ -1,9 +1,8 @@
 module LocalCooking.Spec.Misc.Flags.USA where
 
 import Prelude
-import React as R
-import React.DOM as RD
-import React.DOM.SVG as R
+import React (ReactElement) as R
+import React.DOM.SVG (g, path, rect) as R
 import React.DOM.Props as RP
 
 
