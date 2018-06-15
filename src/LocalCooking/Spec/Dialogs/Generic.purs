@@ -101,6 +101,7 @@ spec :: forall eff siteLinks userDetails userDetailsLinks input output
           }
         , buttons ::
           { close :: Eff (Effects eff) Unit
+          , input :: input
           } -> Array R.ReactElement
         , title :: String
         , submit ::
@@ -177,46 +178,46 @@ spec
                         unsafeCoerceEff (One.putQueue dialogOutputQueue Nothing)
                         dispatch Close
                   }
-        in  dialog'
-            [ dialogTitle {} [R.text title]
-            , dialogContent {style: createStyles {position: "relative"}} $
-                ( case state.open of
-                    Nothing -> [R.text ""]
-                    Just input ->
-                      content.component
+        in  dialog' $ case state.open of
+              Nothing -> []
+              Just input ->
+                [ dialogTitle {} [R.text title]
+                , dialogContent {style: createStyles {position: "relative"}} $
+                    ( content.component
                       { submitDisabled: \d -> IxSignal.set d submit.disabledSignal
                       , input
                       }
-                ) <>
-                  case pendingSignal of
-                    Nothing -> []
-                    Just p  ->
-                      [ pending
-                        { pendingSignal: p
-                        }
+                    ) <>
+                      case pendingSignal of
+                        Nothing -> []
+                        Just p  ->
+                          [ pending
+                            { pendingSignal: p
+                            }
+                          ]
+                , dialogActions {} $
+                    buttons
+                    { close: do
+                        unsafeCoerceEff (dispatch Close)
+                        One.putQueue dialogOutputQueue Nothing
+                    , input
+                    } <>
+                      [ Submit.submit
+                        { color: Button.primary
+                        , variant: Button.flat
+                        , size: Button.medium
+                        , style: createStyles {}
+                        , triggerQueue: submit.queue
+                        , disabledSignal: submit.disabledSignal
+                        } [R.text submit.value]
+                      , button
+                        { color: Button.default
+                        , onTouchTap: mkEffFn1 \_ -> do
+                            unsafeCoerceEff (One.putQueue dialogOutputQueue Nothing)
+                            dispatch Close
+                        } [R.text "Cancel"]
                       ]
-            , dialogActions {} $
-                buttons
-                { close: do
-                    unsafeCoerceEff (dispatch Close)
-                    One.putQueue dialogOutputQueue Nothing
-                } <>
-                  [ Submit.submit
-                    { color: Button.primary
-                    , variant: Button.flat
-                    , size: Button.medium
-                    , style: createStyles {}
-                    , triggerQueue: submit.queue
-                    , disabledSignal: submit.disabledSignal
-                    } [R.text submit.value]
-                  , button
-                    { color: Button.default
-                    , onTouchTap: mkEffFn1 \_ -> do
-                        unsafeCoerceEff (One.putQueue dialogOutputQueue Nothing)
-                        dispatch Close
-                    } [R.text "Cancel"]
-                  ]
-            ]
+                ]
       ]
 
 
@@ -229,6 +230,7 @@ genericDialog :: forall eff siteLinks userDetails userDetailsLinks input output
                  , closeQueue        :: Maybe (One.Queue (write :: WRITE) (Effects eff) Unit)
                  , buttons           ::
                     { close :: Eff (Effects eff) Unit
+                    , input :: input
                     } -> Array R.ReactElement
                  , title             :: String
                  , submitValue       :: String
