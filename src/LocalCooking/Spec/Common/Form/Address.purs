@@ -18,6 +18,10 @@ import React (ReactElement, createClass, createElement) as R
 import React.DOM (text) as R
 import React.Queue.WhileMounted as Queue
 import React.Signal.WhileMounted as Signal
+import MaterialUI.Grid (grid)
+import MaterialUI.Grid as Grid
+import MaterialUI.Typography (typography)
+import MaterialUI.Typography as Typography
 
 import Unsafe.Coerce (unsafeCoerce)
 import IxSignal.Internal (IxSignal)
@@ -84,7 +88,10 @@ spec
 
     render :: T.Render State Unit Action
     render dispatch props compState children =
-      [ text
+      [ typography
+        { variant: Typography.subheading
+        } [R.text "Address"]
+      , text
         { label: R.text "Street"
         , fullWidth: true
         , id: "street"
@@ -92,30 +99,38 @@ spec
         , textSignal: street.signal
         , setQueue: street.setQueue
         }
-      , text
-        { label: R.text "City"
-        , fullWidth: true
-        , id: "city"
-        , updatedQueue: city.updatedQueue
-        , textSignal: city.signal
-        , setQueue: city.setQueue
-        }
-      , select
-        { entries: allUSAStates
-        , parser: usaStateParser
-        , entriesSignal: state.signal
-        , updatedQueue: state.updatedQueue
-        , label: "State"
-        , id: "state"
-        }
-      , text
-        { label: R.text "Zip"
-        , fullWidth: true
-        , id: "zip"
-        , updatedQueue: zip.updatedQueue
-        , textSignal: zip.signal
-        , setQueue: zip.setQueue
-        }
+      , grid {spacing: Grid.spacing8, container: true}
+        [ grid {xs: 7, item: true}
+          [ text
+            { label: R.text "City"
+            , fullWidth: true 
+            , id: "city"
+            , updatedQueue: city.updatedQueue
+            , textSignal: city.signal
+            , setQueue: city.setQueue
+            }
+          ]
+        , grid {xs: 2, item: true}
+          [ select
+            { entries: allUSAStates
+            , parser: usaStateParser
+            , entriesSignal: state.signal
+            , updatedQueue: state.updatedQueue
+            , label: "State"
+            , id: "state"
+            }
+          ]
+        , grid {xs: 3, item: true}
+          [ text
+            { label: R.text "Zip"
+            , fullWidth: true
+            , id: "zip"
+            , updatedQueue: zip.updatedQueue
+            , textSignal: zip.signal
+            , setQueue: zip.setQueue
+            }
+          ]
+        ]
       ]
 
 
