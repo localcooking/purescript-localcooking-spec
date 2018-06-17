@@ -143,12 +143,14 @@ spec
                               , padding: "1em"
                               , position: "relative"
                               , minHeight: "30em"
+                              , display: "flex"
+                              , flexDirection: "row"
                               }
           } $ case getUserDetailsLink state.currentPage of
             Just mUserDetails ->
               -- TODO responsive design for side-drawer navigation
               -- FIXME User details component
-              [ R.div [RP.style {position: "absolute"}]
+              [ R.div []
                 [ Drawer.withStyles
                   (\_ -> {paper: createStyles {position: "relative", width: "200px", zIndex: 1000}})
                   \{classes} -> drawer
@@ -194,7 +196,7 @@ spec
                       ]
                     ]
                   ]
-              , R.div [RP.style {paddingLeft: "216px"}] $
+              , R.div [RP.style {paddingLeft: "1em", width: "100%"}] $
                 -- TODO pack currentPageSignal listener to this level, so side buttons
                 -- aren't redrawn
                 case mUserDetails of
