@@ -17,6 +17,7 @@ import React (ReactElement, createClass, createElement) as R
 import React.DOM (text) as R
 import React.Queue.WhileMounted as Queue
 
+import MaterialUI.Types (createStyles)
 import MaterialUI.Select as Select
 import MaterialUI.Input as Input
 import MaterialUI.Form (formControl, formGroup, formLabel, formControlLabel)
@@ -54,6 +55,7 @@ spec :: forall eff a
         , entries       :: Array a
         , id            :: String
         , parser        :: Parser a
+        , fullWidth     :: Boolean
         } -> T.Spec (Effects eff) (State a) Unit (Action a)
 spec
   { entriesSignal
@@ -62,6 +64,7 @@ spec
   , entries
   , id
   , parser
+  , fullWidth
   } = T.simpleSpec performAction render
   where
     performAction action props state = case action of
@@ -92,6 +95,7 @@ spec
             { name: id
             , id
             }
+          , style: if fullWidth then createStyles {width: "100%"} else createStyles {}
           } $ map (\e -> menuItem
                     { value: Input.valueString (show e)
                     } [R.text (show e)]
@@ -110,6 +114,7 @@ select :: forall eff a
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
           , label         :: String
           , id            :: String
+          , fullWidth     :: Boolean
           } -> R.ReactElement
 select args@{entriesSignal} =
   let {spec: reactSpec, dispatcher} =

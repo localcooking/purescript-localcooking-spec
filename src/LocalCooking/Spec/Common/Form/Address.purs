@@ -18,6 +18,7 @@ import React (ReactElement, createClass, createElement) as R
 import React.DOM (text) as R
 import React.Queue.WhileMounted as Queue
 import React.Signal.WhileMounted as Signal
+import MaterialUI.Types (createStyles)
 import MaterialUI.Grid (grid)
 import MaterialUI.Grid as Grid
 import MaterialUI.Typography (typography)
@@ -88,10 +89,7 @@ spec
 
     render :: T.Render State Unit Action
     render dispatch props compState children =
-      [ typography
-        { variant: Typography.subheading
-        } [R.text "Address"]
-      , text
+      [ text
         { label: R.text "Street"
         , fullWidth: true
         , id: "street"
@@ -118,6 +116,7 @@ spec
             , updatedQueue: state.updatedQueue
             , label: "State"
             , id: "state"
+            , fullWidth: true
             }
           ]
         , grid {xs: 3, item: true}
