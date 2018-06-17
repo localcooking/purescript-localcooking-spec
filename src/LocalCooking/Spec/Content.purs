@@ -135,17 +135,27 @@ spec
                               , minHeight: "30em"
                               , padding: "1em"
                               }
-                      else createStyles
-                              { maxWidth: "80em"
-                              , width: "100%"
-                              , marginLeft: "auto"
-                              , marginRight: "auto"
-                              , padding: "1em"
-                              , position: "relative"
-                              , minHeight: "30em"
-                              , display: "flex"
-                              , flexDirection: "row"
-                              }
+                      else case getUserDetailsLink state.currentPage of
+                             Just _ -> createStyles
+                                          { maxWidth: "80em"
+                                          , width: "100%"
+                                          , marginLeft: "auto"
+                                          , marginRight: "auto"
+                                          , padding: "1em"
+                                          , position: "relative"
+                                          , minHeight: "30em"
+                                          , display: "flex"
+                                          , flexDirection: "row"
+                                          }
+                             _ -> createStyles
+                                    { maxWidth: "80em"
+                                    , width: "100%"
+                                    , marginLeft: "auto"
+                                    , marginRight: "auto"
+                                    , padding: "1em"
+                                    , position: "relative"
+                                    , minHeight: "30em"
+                                    }
           } $ case getUserDetailsLink state.currentPage of
             Just mUserDetails ->
               -- TODO responsive design for side-drawer navigation
