@@ -64,11 +64,9 @@ type Effects eff =
   , exception  :: EXCEPTION
   , uuid       :: GENUUID
   , dom        :: DOM
-  -- , history    :: HISTORY
   , now        :: NOW
   , timer      :: TIMER
   , webStorage :: WEB_STORAGE
-  -- , console    :: CONSOLE
   , scrypt     :: SCRYPT
   | eff)
 
@@ -84,8 +82,6 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
      => Eq siteLinks
      => ToLocation siteLinks
      => UserDetails userDetails
-     -- => Generic siteLinks
-     -- => Generic userDetails
      => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { env                 :: Env
         , globalErrorQueue    :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
@@ -207,8 +203,6 @@ app :: forall eff siteLinks userDetailsLinks userDetails siteQueues
     => Eq siteLinks
     => ToLocation siteLinks
     => UserDetails userDetails
-    -- => Generic siteLinks
-    -- => Generic userDetails
     => LocalCookingParams siteLinks userDetails (Effects eff)
     -> { env                  :: Env
        , globalErrorQueue     :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError

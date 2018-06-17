@@ -67,12 +67,8 @@ type Effects eff =
   ( ref        :: REF
   , exception  :: EXCEPTION
   , uuid       :: GENUUID
-  -- , dom        :: DOM
-  -- , history    :: HISTORY
-  -- , now        :: NOW
   , timer      :: TIMER
   , webStorage :: WEB_STORAGE
-  -- , console    :: CONSOLE
   , scrypt     :: SCRYPT
   | eff)
 
