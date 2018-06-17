@@ -130,7 +130,7 @@ spec :: forall eff siteLinks userDetails userDetailsLinks
           { queue          :: IxQueue (read :: READ) (Effects eff) Unit
           , disabledSignal :: IxSignal (Effects eff) Boolean
           }
-        , pendingSignal            :: IxSignal (Effects eff) Boolean
+        , pendingSignal    :: IxSignal (Effects eff) Boolean
         } -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
 spec
   params

@@ -152,7 +152,7 @@ spec
             Just mUserDetails ->
               -- TODO responsive design for side-drawer navigation
               -- FIXME User details component
-              [ R.div [RP.style {position: "relative"}]
+              [ R.div [RP.style {position: "absolute"}]
                 [ Drawer.withStyles
                   (\_ -> {paper: createStyles {position: "relative", width: "200px", zIndex: 1000}})
                   \{classes} -> drawer
@@ -198,7 +198,7 @@ spec
                       ]
                     ]
                   ]
-              , R.div [RP.style {position: "absolute", left: "216px", top: "1em", paddingLeft: "1em"}] $
+              , R.div [RP.style {paddingLeft: "216px"}] $
                 -- TODO pack currentPageSignal listener to this level, so side buttons
                 -- aren't redrawn
                 case mUserDetails of
