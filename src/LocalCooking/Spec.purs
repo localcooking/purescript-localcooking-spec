@@ -77,6 +77,36 @@ getLCAction :: forall siteLinks userDetails. Prism' (Action siteLinks userDetail
 getLCAction = prism' id Just
 
 
+
+type TemplateArgs eff siteLinks userDetails =
+  { content :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+  , topbar ::
+    { imageSrc :: Location
+    , buttons :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+    }
+  , leftDrawer ::
+    { buttons :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+    }
+  , userDetails ::
+    { buttons :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+    , content :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+    }
+  , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
+  , extendedNetwork :: Array R.ReactElement
+  , security ::
+    { unsavedFormDataQueue :: One.Queue (write :: WRITE) eff SecurityUnsavedFormData
+    }
+  , register ::
+    { unsavedFormDataQueue :: One.Queue (write :: WRITE) eff RegisterUnsavedFormData
+    }
+  , error ::
+    { content :: Array R.ReactElement
+    }
+  }
+
+
+
+
 spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
       . LocalCookingSiteLinks siteLinks userDetailsLinks
      => Eq siteLinks
@@ -92,28 +122,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         , userDeltaIn         :: UserDeltaIn -> Eff (Effects eff) Unit
         -- FIXME ambiguate dependencies APIs
         , dialogQueues :: AllDialogs (Effects eff)
-        , templateArgs ::
-          { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-          , topbar ::
-            { imageSrc :: Location
-            , buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            }
-          , leftDrawer ::
-            { buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            }
-          , userDetails ::
-            { buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            , content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            }
-          , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
-          , extendedNetwork :: Array R.ReactElement
-          , security ::
-            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
-            }
-          , register ::
-            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) RegisterUnsavedFormData
-            }
-          }
+        , templateArgs :: TemplateArgs (Effects eff) siteLinks userDetails
         -- FIXME rename? How could these args be described as spec arguments?
         }
      -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
@@ -181,7 +190,7 @@ spec
       , messages
         { globalErrorQueue: readOnly globalErrorQueue
         }
-      ]
+      ] <> templateArgs.error.content
       where
         template xs =
           [ cssBaseline
@@ -218,28 +227,7 @@ app :: forall eff siteLinks userDetailsLinks userDetails siteQueues
        , authTokenDeltaIn :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
        , userInitIn       :: UserInitIn -> Eff (Effects eff) Unit
        , userDeltaIn      :: UserDeltaIn -> Eff (Effects eff) Unit
-       , templateArgs ::
-          { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-          , topbar ::
-            { imageSrc :: Location
-            , buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            }
-          , leftDrawer ::
-            { buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            }
-          , userDetails ::
-            { buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            , content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            }
-          , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
-          , extendedNetwork :: Array R.ReactElement
-          , security ::
-            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
-            }
-          , register ::
-            { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) RegisterUnsavedFormData
-            }
-          }
+       , templateArgs     :: TemplateArgs (Effects eff) siteLinks userDetails
        }
     -> { spec :: R.ReactSpec Unit (State siteLinks userDetails) (Array R.ReactElement) (Effects eff)
        , dispatcher :: R.ReactThis Unit (State siteLinks userDetails) -> (Action siteLinks userDetails) -> T.EventHandler
