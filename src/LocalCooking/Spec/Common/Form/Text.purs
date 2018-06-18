@@ -5,6 +5,7 @@ import Data.Maybe (Maybe (..))
 import Data.Generic (class Generic, gEq)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
+import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 
@@ -67,6 +68,7 @@ spec
         liftEff (IxSignal.set n textSignal)
         void $ T.cotransform _ { text = n }
       SetText x -> do
+        liftEff $ unsafeCoerceEff $ log $ "setting: " <> x
         liftEff (IxSignal.set x textSignal)
         void $ T.cotransform _ { text = x }
         performAction ReRender props state
@@ -85,10 +87,6 @@ spec
         , value: Input.valueString state.text
         , onChange: mkEffFn1 \e -> dispatch $ ChangedText (unsafeCoerce e).target.value
         , onBlur: mkEffFn1 \_ -> dispatch TextUnfocused
-        -- , error: case unsafePerformEff (IxSignal.get nameSignal) of
-        --   NamePartial _ -> false
-        --   NameBad _ -> true
-        --   NameGood _ -> false
         , name: id
         , id
         } []

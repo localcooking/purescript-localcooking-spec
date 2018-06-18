@@ -51,7 +51,6 @@ spec :: forall eff a
      => Eq a
      => { entriesSignal :: IxSignal (Effects eff) (Maybe a)
         , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
-        , setQueue      :: One.Queue (write :: WRITE) (Effects eff) a
         , label         :: String
         , entries       :: Array a
         , id            :: String
@@ -61,7 +60,6 @@ spec :: forall eff a
 spec
   { entriesSignal
   , updatedQueue
-  , setQueue
   , label
   , entries
   , id
@@ -127,12 +125,15 @@ select :: forall eff a
           , id            :: String
           , fullWidth     :: Boolean
           } -> R.ReactElement
-select args@{entriesSignal,setQueue} =
+select {entries,parser,entriesSignal,updatedQueue,setQueue,label,id,fullWidth} =
   let {spec: reactSpec, dispatcher} =
         T.createReactSpec
-          (spec args) (unsafePerformEff $ IxSignal.get entriesSignal)
+          ( spec
+            { entries, parser, entriesSignal, updatedQueue, label, id, fullWidth }
+          ) (unsafePerformEff $ IxSignal.get entriesSignal)
       reactSpec' =
         Queue.whileMountedOne
           (allowReading setQueue)
           (\this x -> unsafeCoerceEff $ dispatcher this $ SetEntry x)
-  in  R.createElement (R.createClass reactSpec) unit []
+          reactSpec
+  in  R.createElement (R.createClass reactSpec') unit []
