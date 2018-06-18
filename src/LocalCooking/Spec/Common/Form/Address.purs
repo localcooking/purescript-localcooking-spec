@@ -6,28 +6,21 @@ import Data.Address (USAState, allUSAStates, usaStateParser, USAAddress (..))
 
 import Prelude
 import Data.Maybe (Maybe (..))
-import Data.Generic (class Generic, gEq)
 import Data.Int.Parse (parseInt, toRadix)
 import Control.Monad.Eff.Ref (REF)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Uncurried (mkEffFn1)
-import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
+import Control.Monad.Eff.Unsafe (unsafePerformEff)
 
 import Thermite as T
 import React (ReactElement, createClass, createElement) as R
 import React.DOM (text) as R
 import React.Queue.WhileMounted as Queue
 import React.Signal.WhileMounted as Signal
-import MaterialUI.Types (createStyles)
 import MaterialUI.Grid (grid)
 import MaterialUI.Grid as Grid
-import MaterialUI.Typography (typography)
-import MaterialUI.Typography as Typography
 
-import Unsafe.Coerce (unsafeCoerce)
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import Queue.Types (READ, WRITE, allowWriting, allowReading, readOnly, writeOnly)
+import Queue.Types (READ, WRITE, allowWriting, readOnly, writeOnly)
 import Queue.One as One
 import IxQueue (IxQueue)
 import IxQueue as IxQueue
@@ -136,7 +129,7 @@ spec
 
 address :: forall eff
          . { updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
-           , addressSignal :: IxSignal (Effects eff) USAAddress
+           , addressSignal :: IxSignal (Effects eff) (Maybe USAAddress)
            , setQueue :: One.Queue (write :: WRITE) (Effects eff) USAAddress
            } -> R.ReactElement
 address {updatedQueue,addressSignal,setQueue} =
@@ -168,13 +161,13 @@ address {updatedQueue,addressSignal,setQueue} =
         city <- IxSignal.get citySignal
         mState <- IxSignal.get stateSignal
         case mState of
-          Nothing -> pure unit
+          Nothing -> IxSignal.set Nothing addressSignal
           Just state -> do
             z <- IxSignal.get zipSignal
             case parseInt z (toRadix 10) of
-              Nothing -> pure unit
+              Nothing -> IxSignal.set Nothing addressSignal
               Just zip ->
-                IxSignal.set (USAAddress {street,city,state,zip}) addressSignal
+                IxSignal.set (Just $ USAAddress {street,city,state,zip}) addressSignal
       reactSpec' =
           Queue.whileMountedIx
             streetUpdatedQueue
