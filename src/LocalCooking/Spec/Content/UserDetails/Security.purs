@@ -282,6 +282,9 @@ newtype SecurityUnsavedFormData = SecurityUnsavedFormData
   }
 
 
+
+-- FIXME doesn't set or get security data?
+
 security :: forall eff siteLinks userDetails userDetailsLinks
           . UserDetails userDetails
          => LocalCookingSiteLinks siteLinks userDetailsLinks
