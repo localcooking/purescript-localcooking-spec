@@ -21,7 +21,7 @@ import MaterialUI.Grid as Grid
 
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import Queue.Types (READ, WRITE, allowWriting, readOnly, writeOnly)
+import Queue.Types (READ, WRITE, allowReading, allowWriting, readOnly, writeOnly)
 import Queue.One as One
 import IxQueue (IxQueue)
 import IxQueue as IxQueue
@@ -64,6 +64,7 @@ spec :: forall eff
         , state ::
           { signal :: IxSignal (Effects eff) (Maybe USAState)
           , updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
+          , setQueue :: One.Queue (write :: WRITE) (Effects eff) USAState
           }
         , zip ::
           { updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
@@ -108,6 +109,7 @@ spec
             , parser: usaStateParser
             , entriesSignal: state.signal
             , updatedQueue: state.updatedQueue
+            , setQueue: state.setQueue
             , label: "State"
             , id: "state"
             , fullWidth: true
@@ -150,6 +152,7 @@ address {updatedQueue,addressSignal,setQueue} =
             , state:
               { updatedQueue: stateUpdatedQueue
               , signal: stateSignal
+              , setQueue: stateSetQueue
               }
             , zip:
               { updatedQueue: zipUpdatedQueue
@@ -161,14 +164,12 @@ address {updatedQueue,addressSignal,setQueue} =
         street <- IxSignal.get streetSignal
         city <- IxSignal.get citySignal
         mState <- IxSignal.get stateSignal
-        unsafeCoerceEff $ log $ "address state: " <> show mState
         case mState of
           Nothing -> IxSignal.set Nothing addressSignal
           Just state -> do
             z <- IxSignal.get zipSignal
             case parseInt z (toRadix 10) of
-              Nothing -> do
-                unsafeCoerceEff $ log "bad zip?"
+              Nothing ->
                 IxSignal.set Nothing addressSignal
               Just zip ->
                 IxSignal.set (Just $ USAAddress {street,city,state,zip}) addressSignal
@@ -189,6 +190,14 @@ address {updatedQueue,addressSignal,setQueue} =
             zipUpdatedQueue
             "zipUpdated"
             (\_ _ -> IxQueue.broadcastIxQueue (allowWriting updatedQueue) unit)
+        $ Queue.whileMountedOne
+            (allowReading setQueue)
+            (\_ (USAAddress {street,city,state,zip}) -> do
+              One.putQueue streetSetQueue street
+              One.putQueue citySetQueue city
+              One.putQueue stateSetQueue state
+              One.putQueue zipSetQueue (show zip)
+            )
         $ Signal.whileMountedIx
             streetSignal
             "streetSignal"
@@ -223,6 +232,7 @@ address {updatedQueue,addressSignal,setQueue} =
       Nothing -> Nothing
       Just (USAAddress {state}) -> Just state
     stateUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
+    stateSetQueue = unsafePerformEff $ writeOnly <$> One.newQueue
     zipUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     zipSignal = unsafePerformEff $ IxSignal.make $ case mAddr of
       Nothing -> ""

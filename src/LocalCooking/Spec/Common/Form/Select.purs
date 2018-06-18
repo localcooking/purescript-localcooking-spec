@@ -37,7 +37,7 @@ type State a = Maybe a
 
 data Action a
   = ClickedEntry Input.Value -- Boolean
-  -- | SetName NameState
+  | SetEntry a
   -- | NameUnfocused
   -- | ReRender
 
@@ -51,6 +51,7 @@ spec :: forall eff a
      => Eq a
      => { entriesSignal :: IxSignal (Effects eff) (Maybe a)
         , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
+        , setQueue      :: One.Queue (write :: WRITE) (Effects eff) a
         , label         :: String
         , entries       :: Array a
         , id            :: String
@@ -60,6 +61,7 @@ spec :: forall eff a
 spec
   { entriesSignal
   , updatedQueue
+  , setQueue
   , label
   , entries
   , id
@@ -80,6 +82,11 @@ spec
         when (mx /= state) $ do
           liftEff $ IxSignal.set mx entriesSignal
           void $ T.cotransform \_ -> mx
+          liftEff $ IxQueue.broadcastIxQueue (allowWriting updatedQueue) unit
+      SetEntry x ->
+        when (Just x /= state) $ do
+          liftEff $ IxSignal.set (Just x) entriesSignal
+          void $ T.cotransform \_ -> Just x
           liftEff $ IxQueue.broadcastIxQueue (allowWriting updatedQueue) unit
 
     render :: T.Render (State a) Unit (Action a)
@@ -115,12 +122,17 @@ select :: forall eff a
           , parser        :: Parser a
           , entriesSignal :: IxSignal (Effects eff) (Maybe a)
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
+          , setQueue      :: One.Queue (write :: WRITE) (Effects eff) a
           , label         :: String
           , id            :: String
           , fullWidth     :: Boolean
           } -> R.ReactElement
-select args@{entriesSignal} =
+select args@{entriesSignal,setQueue} =
   let {spec: reactSpec, dispatcher} =
         T.createReactSpec
           (spec args) (unsafePerformEff $ IxSignal.get entriesSignal)
+      reactSpec' =
+        Queue.whileMountedOne
+          (allowReading setQueue)
+          (\this x -> unsafeCoerceEff $ dispatcher this $ SetEntry x)
   in  R.createElement (R.createClass reactSpec) unit []
