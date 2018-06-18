@@ -8,7 +8,8 @@ import Prelude
 import Data.Maybe (Maybe (..))
 import Data.Int.Parse (parseInt, toRadix)
 import Control.Monad.Eff.Ref (REF)
-import Control.Monad.Eff.Unsafe (unsafePerformEff)
+import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
+import Control.Monad.Eff.Console (log)
 
 import Thermite as T
 import React (ReactElement, createClass, createElement) as R
@@ -160,12 +161,15 @@ address {updatedQueue,addressSignal,setQueue} =
         street <- IxSignal.get streetSignal
         city <- IxSignal.get citySignal
         mState <- IxSignal.get stateSignal
+        unsafeCoerceEff $ log $ "address state: " <> show mState
         case mState of
           Nothing -> IxSignal.set Nothing addressSignal
           Just state -> do
             z <- IxSignal.get zipSignal
             case parseInt z (toRadix 10) of
-              Nothing -> IxSignal.set Nothing addressSignal
+              Nothing -> do
+                unsafeCoerceEff $ log "bad zip?"
+                IxSignal.set Nothing addressSignal
               Just zip ->
                 IxSignal.set (Just $ USAAddress {street,city,state,zip}) addressSignal
       reactSpec' =
