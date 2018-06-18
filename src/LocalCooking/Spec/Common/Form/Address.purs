@@ -193,6 +193,7 @@ address {updatedQueue,addressSignal,setQueue} =
         $ Queue.whileMountedOne
             (allowReading setQueue)
             (\_ (USAAddress {street,city,state,zip}) -> do
+              unsafeCoerceEff $ log "setting..."
               One.putQueue streetSetQueue street
               One.putQueue citySetQueue city
               One.putQueue stateSetQueue state
