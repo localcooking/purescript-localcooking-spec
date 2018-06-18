@@ -4,7 +4,7 @@ import LocalCooking.Common.User.Name (Name, mkName)
 
 import Prelude
 import Data.Maybe (Maybe (..))
-import Data.Generic (class Generic, gEq)
+import Data.Generic (class Generic, gEq, gShow)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
@@ -58,6 +58,9 @@ derive instance genericNameState :: Generic NameState
 
 instance eqNameState :: Eq NameState where
   eq = gEq
+
+instance showNameState :: Show NameState where
+  show = gShow
 
 
 
