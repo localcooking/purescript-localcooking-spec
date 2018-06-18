@@ -204,14 +204,23 @@ address {updatedQueue,addressSignal,setQueue} =
             reactSpec
   in  R.createElement (R.createClass reactSpec') unit []
   where
+    mAddr = unsafePerformEff $ IxSignal.get addressSignal
     streetUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
-    streetSignal = unsafePerformEff $ IxSignal.make ""
+    streetSignal = unsafePerformEff $ IxSignal.make $ case mAddr of
+      Nothing -> ""
+      Just (USAAddress {street}) -> street
     streetSetQueue = unsafePerformEff $ writeOnly <$> One.newQueue
     cityUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
-    citySignal = unsafePerformEff $ IxSignal.make ""
+    citySignal = unsafePerformEff $ IxSignal.make $ case mAddr of
+      Nothing -> ""
+      Just (USAAddress {city}) -> city
     citySetQueue = unsafePerformEff $ writeOnly <$> One.newQueue
-    stateSignal = unsafePerformEff $ IxSignal.make Nothing
+    stateSignal = unsafePerformEff $ IxSignal.make $ case mAddr of
+      Nothing -> Nothing
+      Just (USAAddress {state}) -> Just state
     stateUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
     zipUpdatedQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
-    zipSignal = unsafePerformEff $ IxSignal.make ""
+    zipSignal = unsafePerformEff $ IxSignal.make $ case mAddr of
+      Nothing -> ""
+      Just (USAAddress {zip}) -> show zip
     zipSetQueue = unsafePerformEff $ writeOnly <$> One.newQueue
