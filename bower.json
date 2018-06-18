@@ -9,7 +9,7 @@
   "dependencies": {
     "purescript-prelude": "^3.2.0",
     "purescript-material-ui": "git://github.com/athanclark/purescript-material-ui.git#c595ff1963d3bdbe97e3f26cfda111c49f75b7e5",
-    "purescript-localcooking-dependencies": "git@git.localcooking.com:localcooking/purescript-localcooking-dependencies.git#ff4b3f3066fc7db2c9ba9cc1321707c2b77001ab",
+    "purescript-localcooking-dependencies": "git@git.localcooking.com:localcooking/purescript-localcooking-dependencies.git#06ef1709071b9f3b23a2eb424b58ab6cf2e5e13a",
     "purescript-react": "^5.1.0",
     "purescript-webstorage": "^4.0.0",
     "purescript-thermite": "git://github.com/jvliwanag/purescript-thermite.git#94299d6832d92f14bef029f35d07bd5e8b062e05",
