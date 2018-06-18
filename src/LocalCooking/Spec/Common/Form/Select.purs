@@ -84,7 +84,7 @@ spec
 
     render :: T.Render (State a) Unit (Action a)
     render dispatch props state children =
-      [ formControl {}
+      [ formControl {fullWidth}
         [ Input.inputLabel {htmlFor: id} [R.text label]
         , Select.withStyles
             (\_ -> {root: if fullWidth then createStyles {width: "100%"} else createStyles {}})
