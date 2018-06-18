@@ -86,20 +86,23 @@ spec
     render dispatch props state children =
       [ formControl {}
         [ Input.inputLabel {htmlFor: id} [R.text label]
-        , Select.select
-          { value: case state of
-              Nothing -> Input.valueNull
-              Just x -> Input.valueString (show x)
-          , onChange: mkEffFn1 \e -> dispatch $ ClickedEntry (unsafeCoerce e).target.value
-          , inputProps:
-            { name: id
-            , id
-            }
-          , style: if fullWidth then createStyles {width: "100%"} else createStyles {}
-          } $ map (\e -> menuItem
-                    { value: Input.valueString (show e)
-                    } [R.text (show e)]
-                  ) entries
+        , Select.withStyles
+            (\_ -> {root: if fullWidth then createStyles {width: "100%"} else createStyles {}})
+            \{classes} ->
+              Select.select
+              { value: case state of
+                  Nothing -> Input.valueNull
+                  Just x -> Input.valueString (show x)
+              , onChange: mkEffFn1 \e -> dispatch $ ClickedEntry (unsafeCoerce e).target.value
+              , inputProps:
+                { name: id
+                , id
+                }
+              , classes: Select.createClasses classes
+              } $ map (\e -> menuItem
+                        { value: Input.valueString (show e)
+                        } [R.text (show e)]
+                      ) entries
         ]
       ]
 
