@@ -1,6 +1,7 @@
 module LocalCooking.Spec.Common.Form.SearchResults where
 
 import Prelude
+import Data.Array as Array
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
@@ -41,6 +42,7 @@ initialState {initResults} =
 data Action a
   = SetResults (Array a)
   | AddResults (Array a)
+  | DelResult a
   | ReRender
 
 type Effects eff =
@@ -49,7 +51,8 @@ type Effects eff =
 
 
 spec :: forall eff a
-      . { resultsSignal :: IxSignal (Effects eff) (Array a)
+      . Eq a
+     => { resultsSignal :: IxSignal (Effects eff) (Array a)
         , renderA  :: a -> R.ReactElement
         } -> T.Spec (Effects eff) (State a) Unit (Action a)
 spec
@@ -65,6 +68,12 @@ spec
       AddResults xs -> do
         ys <- liftEff $ IxSignal.get resultsSignal
         let zs = ys <> xs
+        liftEff $ IxSignal.set zs resultsSignal
+        void $ T.cotransform _ { results = zs }
+        performAction ReRender props state
+      DelResult x -> do
+        ys <- liftEff $ IxSignal.get resultsSignal
+        let zs = Array.filter (\y -> y /= x) ys
         liftEff $ IxSignal.set zs resultsSignal
         void $ T.cotransform _ { results = zs }
         performAction ReRender props state
@@ -84,12 +93,14 @@ spec
 
 
 results :: forall eff a
-         . { setQueue :: One.Queue (write :: WRITE) (Effects eff) (Array a)
+         . Eq a
+        => { setQueue :: One.Queue (write :: WRITE) (Effects eff) (Array a)
            , addQueue :: One.Queue (write :: WRITE) (Effects eff) (Array a)
+           , delQueue :: One.Queue (write :: WRITE) (Effects eff) a
            , resultsSignal :: IxSignal (Effects eff) (Array a)
            , renderA :: a -> R.ReactElement
            } -> R.ReactElement
-results {setQueue,addQueue,resultsSignal,renderA} =
+results {setQueue,addQueue,delQueue,resultsSignal,renderA} =
   let init =
         { initResults: unsafePerformEff (IxSignal.get resultsSignal)
         }
@@ -106,5 +117,8 @@ results {setQueue,addQueue,resultsSignal,renderA} =
         $ Queue.whileMountedOne
             (allowReading addQueue)
             (\this x -> unsafeCoerceEff $ dispatcher this $ AddResults x)
+        $ Queue.whileMountedOne
+            (allowReading delQueue)
+            (\this x -> unsafeCoerceEff $ dispatcher this $ DelResult x)
             reactSpec
   in  R.createElement (R.createClass reactSpec') unit []
