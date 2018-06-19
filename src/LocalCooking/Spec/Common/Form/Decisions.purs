@@ -52,24 +52,24 @@ type Effects eff =
 
 spec :: forall eff a
       . Eq a
-     => { decisionsQueue :: IxSignal (Effects eff) (Array a)
+     => { decisionsSignal :: IxSignal (Effects eff) (Array a)
         , renderA :: a -> R.ReactElement
         } -> T.Spec (Effects eff) (State a) Unit (Action a)
 spec
-  { decisionsQueue
+  { decisionsSignal
   , renderA
   } = T.simpleSpec performAction render
   where
     performAction action props state = case action of
       AddDecision x -> do
-        xs <- liftEff (IxSignal.get decisionsQueue)
+        xs <- liftEff (IxSignal.get decisionsSignal)
         let ys = xs <> [x]
-        liftEff (IxSignal.set ys decisionsQueue)
+        liftEff (IxSignal.set ys decisionsSignal)
         void $ T.cotransform _ { decisions = ys }
       DelDecision x -> do
-        xs <- liftEff (IxSignal.get decisionsQueue)
+        xs <- liftEff (IxSignal.get decisionsSignal)
         let ys = Array.filter (\y -> y /= x) xs
-        liftEff (IxSignal.set ys decisionsQueue)
+        liftEff (IxSignal.set ys decisionsSignal)
         void $ T.cotransform _ { decisions = ys }
       ReRender -> void $ T.cotransform _ { rerender = unit }
 
@@ -91,17 +91,17 @@ decisions :: forall eff a
            . Eq a
           => { addQueue       :: One.Queue (write :: WRITE) (Effects eff) a
              , delQueue       :: One.Queue (write :: WRITE) (Effects eff) a
-             , decisionsQueue :: IxSignal (Effects eff) (Array a)
+             , decisionsSignal :: IxSignal (Effects eff) (Array a)
              , renderA :: a -> R.ReactElement
              } -> R.ReactElement
-decisions {addQueue,delQueue,decisionsQueue,renderA} =
+decisions {addQueue,delQueue,decisionsSignal,renderA} =
   let init =
-        { initDecisions: unsafePerformEff (IxSignal.get decisionsQueue)
+        { initDecisions: unsafePerformEff (IxSignal.get decisionsSignal)
         }
       {spec: reactSpec, dispatcher} =
         T.createReactSpec
           ( spec
-            { decisionsQueue
+            { decisionsSignal
             , renderA
             } ) (initialState init)
       reactSpec' =
