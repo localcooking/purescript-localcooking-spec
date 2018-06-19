@@ -50,9 +50,10 @@ spec :: forall eff
         , size         :: Button.Size
         , style        :: Styles
         , triggerQueue :: IxQueue (read :: READ) (Effects eff) Unit
+        , fullWidth    :: Boolean
         }
      -> T.Spec (Effects eff) State Unit Action
-spec {color,variant,size,style,triggerQueue} = T.simpleSpec performAction render
+spec {color,variant,size,style,triggerQueue,fullWidth} = T.simpleSpec performAction render
   where
     performAction action props state = case action of
       ChangedDisabled d -> void $ T.cotransform _ { disabled = d }
@@ -65,6 +66,7 @@ spec {color,variant,size,style,triggerQueue} = T.simpleSpec performAction render
         , variant
         , size
         , style
+        , fullWidth
         , disabled: state.disabled
         , onTouchTap: mkEffFn1 \_ -> dispatch Clicked
         } children
@@ -78,13 +80,14 @@ submit :: forall eff
          , style          :: Styles
          , triggerQueue   :: IxQueue (read :: READ) (Effects eff) Unit
          , disabledSignal :: IxSignal (Effects eff) Boolean
+         , fullWidth      :: Boolean
          } -> Array R.ReactElement -> R.ReactElement
-submit {disabledSignal,color,variant,size,style,triggerQueue} =
+submit {disabledSignal,color,variant,size,style,triggerQueue,fullWidth} =
   let init =
         { initDisabled: unsafePerformEff (IxSignal.get disabledSignal)
         }
       {spec: reactSpec, dispatcher} =
-        T.createReactSpec (spec {color,variant,size,style,triggerQueue}) (initialState init)
+        T.createReactSpec (spec {color,variant,size,style,triggerQueue,fullWidth}) (initialState init)
       reactSpec' =
           Signal.whileMountedIx
             disabledSignal

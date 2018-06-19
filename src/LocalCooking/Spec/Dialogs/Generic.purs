@@ -209,6 +209,7 @@ spec
                         , style: createStyles {}
                         , triggerQueue: submit.queue
                         , disabledSignal: submit.disabledSignal
+                        , fullWidth: false
                         } [R.text submit.value]
                       , button
                         { color: Button.default

@@ -81,6 +81,7 @@ spec
           , padding: "0.5em"
           , marginBottom: "1em"
           , display: "flex"
+          , minHeight: "4.5em"
           }
         } (map renderA state.decisions)
       ]

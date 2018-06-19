@@ -256,6 +256,7 @@ spec
             , style: createStyles {}
             , disabledSignal: privacy.disabledSignal
             , triggerQueue: privacy.queue
+            , fullWidth: false
             } [R.text "Privacy Policy"]
           , R.br [] []
           , Submit.submit
@@ -265,6 +266,7 @@ spec
             , style: createStyles {marginTop: "1em"}
             , disabledSignal: submit.disabledSignal
             , triggerQueue: submit.queue
+            , fullWidth: false
             } [R.text "Submit"]
           ]
         ]

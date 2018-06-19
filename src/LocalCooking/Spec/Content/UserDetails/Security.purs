@@ -264,6 +264,7 @@ spec
         , style: createStyles {marginTop: "1em"}
         , disabledSignal: submit.disabledSignal
         , triggerQueue: submit.queue
+        , fullWidth: false
         } [R.text "Submit"]
       , pending
         { pendingSignal
