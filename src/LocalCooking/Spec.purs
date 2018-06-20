@@ -96,7 +96,7 @@ type TemplateArgs eff siteLinks userDetails =
     { unsavedFormDataQueue :: One.Queue (write :: WRITE) eff RegisterUnsavedFormData
     }
   , error ::
-    { content :: Array R.ReactElement
+    { content :: R.ReactElement
     }
   }
 
@@ -186,7 +186,8 @@ spec
       , messages
         { globalErrorQueue: readOnly globalErrorQueue
         }
-      ] <> templateArgs.error.content
+      , templateArgs.error.content
+      ]
       where
         template xs =
           [ cssBaseline
