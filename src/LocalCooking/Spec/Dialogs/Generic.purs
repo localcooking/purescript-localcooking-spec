@@ -10,7 +10,7 @@ import Data.Maybe (Maybe (..))
 import Data.UUID (GENUUID)
 import Data.URI.Location (class ToLocation)
 import Data.Time.Duration (Milliseconds (..))
-import Data.Lens (Lens', Prism', lens, prism')
+import Data.Lens (Lens', lens)
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Aff (Aff, delay)
@@ -77,12 +77,6 @@ type Effects eff =
 getLCState :: forall input siteLinks userDetails
             . Lens' (State input siteLinks userDetails) (LocalCookingState siteLinks userDetails)
 getLCState = lens (_.localCooking) (_ { localCooking = _ })
-
-getLCAction :: forall input siteLinks userDetails
-             . Prism' (Action input siteLinks userDetails) (LocalCookingAction siteLinks userDetails)
-getLCAction = prism' LocalCookingAction $ case _ of
-  LocalCookingAction x -> Just x
-  _ -> Nothing
 
 
 spec :: forall eff siteLinks userDetails userDetailsLinks input output

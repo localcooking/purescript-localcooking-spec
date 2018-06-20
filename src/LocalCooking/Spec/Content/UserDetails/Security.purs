@@ -19,7 +19,7 @@ import Prelude
 import Data.Maybe (Maybe (..))
 import Data.URI.Location (class ToLocation)
 import Data.UUID (GENUUID)
-import Data.Lens (Lens', Prism', lens, prism')
+import Data.Lens (Lens', lens)
 import Text.Email.Validate (toString) as Email
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff (Eff)
@@ -92,11 +92,6 @@ getLCState :: forall siteLinks userDetails
             . Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
 getLCState = lens (_.localCooking) (_ { localCooking = _ })
 
-getLCAction :: forall siteLinks userDetails
-             . Prism' (Action siteLinks userDetails) (LocalCookingAction siteLinks userDetails)
-getLCAction = prism' LocalCookingAction $ case _ of
-  LocalCookingAction x -> Just x
-  _ -> Nothing
 
 
 spec :: forall eff siteLinks userDetails userDetailsLinks

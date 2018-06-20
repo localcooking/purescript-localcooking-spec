@@ -18,7 +18,7 @@ import Prelude
 import Data.UUID (GENUUID)
 import Data.URI.Location (class ToLocation)
 import Data.Maybe (Maybe (..))
-import Data.Lens (Lens', Prism', lens, prism')
+import Data.Lens (Lens', lens)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
@@ -75,9 +75,6 @@ type Effects eff =
 getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
 getLCState = lens id (\_ x -> x)
 
-getLCAction :: forall siteLinks userDetails. Prism' (Action siteLinks userDetails) (LocalCookingAction siteLinks userDetails)
-getLCAction = prism' id Just
-
 
 
 spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
@@ -94,7 +91,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         , userDeltaIn        :: UserDeltaIn -> Eff (Effects eff) Unit
         , dialogQueues :: AllDialogs (Effects eff)
         , templateArgs ::
-          { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+          { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> R.ReactElement
           , security ::
             { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) SecurityUnsavedFormData
             }
@@ -102,8 +99,11 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
             { unsavedFormDataQueue :: One.Queue (write :: WRITE) (Effects eff) RegisterUnsavedFormData
             }
           , userDetails ::
-            { buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-            , content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+            { buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
+                      -> Array R.ReactElement
+                      -> R.ReactElement
+                      -> R.ReactElement
+            , content :: LocalCookingParams siteLinks userDetails (Effects eff) -> R.ReactElement
             }
           , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
           , extendedNetwork :: Array R.ReactElement
@@ -168,61 +168,62 @@ spec
                     , anchor: Drawer.left
                     , classes: Drawer.createClasses classes
                     }
-                    [ list {} $
-                      [ listItem
-                        { button: true
-                        , onClick: mkEffFn1 \_ -> unsafeCoerceEff
-                                                $ params.siteLinks $ userDetailsLink
-                                                $ Just userDetailsGeneralLink
-                        }
-                        [ listItemText
-                          { primary: "General"
+                    [ list {}
+                      [ templateArgs.userDetails.buttons params
+                        [ listItem
+                          { button: true
+                          , onClick: mkEffFn1 \_ -> unsafeCoerceEff
+                                                  $ params.siteLinks $ userDetailsLink
+                                                  $ Just userDetailsGeneralLink
                           }
-                        ]
-                      , divider {}
-                      , listItem
-                        { button: true
-                        , onClick: mkEffFn1 \_ -> unsafeCoerceEff
-                                                $ params.siteLinks $ userDetailsLink
-                                                $ Just userDetailsSecurityLink
-                        }
-                        [ listItemText
-                          { primary: "Security"
+                          [ listItemText
+                            { primary: "General"
+                            }
+                          ]
+                        , divider {}
+                        , listItem
+                          { button: true
+                          , onClick: mkEffFn1 \_ -> unsafeCoerceEff
+                                                  $ params.siteLinks $ userDetailsLink
+                                                  $ Just userDetailsSecurityLink
                           }
+                          [ listItemText
+                            { primary: "Security"
+                            }
+                          ]
+                        , divider {}
                         ]
-                      , divider {}
-                      ] <> templateArgs.userDetails.buttons params
-                        <>
-                      [ listItem
-                        { button: true
-                        , onClick: mkEffFn1 \_ -> unsafeCoerceEff
-                                                $ authTokenDeltaIn AuthTokenDeltaInLogout -- pure unit -- dispatch Logout
-                          -- FIXME feels weird - shouldn't this be its own sidebar component?
-                        }
-                        [ listItemText
-                          { primary: "Logout"
+                        ( listItem
+                          { button: true
+                          , onClick: mkEffFn1 \_ -> unsafeCoerceEff
+                                                  $ authTokenDeltaIn AuthTokenDeltaInLogout -- pure unit -- dispatch Logout
+                            -- FIXME feels weird - shouldn't this be its own sidebar component?
                           }
-                        ]
+                          [ listItemText
+                            { primary: "Logout"
+                            }
+                          ]
+                        )
                       ]
                     ]
                   ]
-              , R.div [RP.style {paddingLeft: "1em", width: "100%"}] $
+              , R.div [RP.style {paddingLeft: "1em", width: "100%"}]
                 -- TODO pack currentPageSignal listener to this level, so side buttons
                 -- aren't redrawn
-                case mUserDetails of
-                  Just d
-                    | d == userDetailsSecurityLink ->
-                      [ security
-                        params
-                        { env
-                        , globalErrorQueue: writeOnly globalErrorQueue
-                        , userDeltaIn
-                        , authenticateDialogQueue: dialogQueues.authenticate.openQueue
-                        , unsavedFormDataQueue: templateArgs.security.unsavedFormDataQueue
-                        }
-                      ]
-                    | otherwise -> templateArgs.userDetails.content params
-                  _ -> templateArgs.userDetails.content params
+                [ case mUserDetails of
+                    Just d
+                      | d == userDetailsSecurityLink ->
+                        security
+                          params
+                          { env
+                          , globalErrorQueue: writeOnly globalErrorQueue
+                          , userDeltaIn
+                          , authenticateDialogQueue: dialogQueues.authenticate.openQueue
+                          , unsavedFormDataQueue: templateArgs.security.unsavedFormDataQueue
+                          }
+                      | otherwise -> templateArgs.userDetails.content params
+                    _ -> templateArgs.userDetails.content params
+                ]
               ]
 
             _ | state.currentPage == registerLink ->
@@ -236,7 +237,7 @@ spec
                     }
                   ]
               | otherwise ->
-                  templateArgs.content params
+                  [ templateArgs.content params ]
         ]
       , -- FIXME footer component? Nah, just pack in content
         typography
@@ -294,10 +295,13 @@ content :: forall eff siteLinks userDetailsLinks userDetails siteQueues
            , userDeltaIn        :: UserDeltaIn -> Eff (Effects eff) Unit
            , dialogQueues :: AllDialogs (Effects eff)
            , templateArgs ::
-              { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+              { content :: LocalCookingParams siteLinks userDetails (Effects eff) -> R.ReactElement
               , userDetails ::
-                { buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
-                , content :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+                { buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
+                          -> Array R.ReactElement
+                          -> R.ReactElement
+                          -> R.ReactElement
+                , content :: LocalCookingParams siteLinks userDetails (Effects eff) -> R.ReactElement
                 }
               , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
               , extendedNetwork :: Array R.ReactElement

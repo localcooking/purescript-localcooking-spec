@@ -8,7 +8,7 @@ import Prelude
 import Data.Tuple (Tuple (..))
 import Data.Maybe (Maybe (..))
 import Data.UUID (GENUUID)
-import Data.Lens (Lens', Prism', lens, prism')
+import Data.Lens (Lens', lens)
 import Data.Time.Duration (Milliseconds (..))
 import Data.DateTime.Instant (unInstant)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
@@ -60,17 +60,14 @@ type Effects eff =
 getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
 getLCState = lens (_.localCooking) (_ { localCooking = _ })
 
-getLCAction :: forall siteLinks userDetails. Prism' (Action siteLinks userDetails) (LocalCookingAction siteLinks userDetails)
-getLCAction = prism' LocalCookingAction $ case _ of
-  LocalCookingAction x -> Just x
-  _ -> Nothing
-
 
 
 spec :: forall eff siteLinks userDetailsLinks userDetails
       . LocalCookingSiteLinks siteLinks userDetailsLinks
      => LocalCookingParams siteLinks userDetails (Effects eff)
-     -> { buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+     -> { buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
+                  -> R.ReactElement -- About button
+                  -> R.ReactElement
         }
      -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
 spec
@@ -113,17 +110,18 @@ spec
         { open: state.open
         , onClose: mkEffFn1 \_ -> dispatch Close
         }
-        [ list {} $
-          [ listItem
-            { button: true
-            , onClick: mkEffFn1 \_ -> dispatch $ Clicked $ rootLink :: siteLinks
-            }
-            [ listItemIcon {} personPinIcon
-            , listItemText
-              { primary: "About"
+        [ list {}
+          [ buttons params $
+            listItem
+              { button: true
+              , onClick: mkEffFn1 \_ -> dispatch $ Clicked $ rootLink :: siteLinks
               }
-            ]
-          ] <> buttons params
+              [ listItemIcon {} personPinIcon
+              , listItemText
+                { primary: "About"
+                }
+              ]
+          ]
         ]
       ]
 
@@ -132,7 +130,9 @@ leftMenu :: forall eff siteLinks userDetailsLinks userDetails
           . LocalCookingSiteLinks siteLinks userDetailsLinks
          => LocalCookingParams siteLinks userDetails (Effects eff)
          -> { mobileDrawerOpenTrigger :: Queue (read :: READ) (Effects eff) Unit
-            , buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+            , buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
+                      -> R.ReactElement -- About button
+                      -> R.ReactElement
             }
          -> R.ReactElement
 leftMenu

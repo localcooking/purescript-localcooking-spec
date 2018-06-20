@@ -23,8 +23,8 @@ import LocalCooking.Common.User.Password (HashedPassword)
 import Prelude
 import Data.URI.Location (Location, class ToLocation)
 import Data.UUID (GENUUID)
-import Data.Maybe (Maybe (..))
-import Data.Lens (Lens', Prism', lens, prism')
+import Data.Maybe (Maybe)
+import Data.Lens (Lens', lens)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 import Control.Monad.Eff.Ref (REF)
@@ -73,23 +73,19 @@ type Effects eff =
 getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
 getLCState = lens id (\_ x -> x)
 
-getLCAction :: forall siteLinks userDetails. Prism' (Action siteLinks userDetails) (LocalCookingAction siteLinks userDetails)
-getLCAction = prism' id Just
-
-
 
 type TemplateArgs eff siteLinks userDetails =
-  { content :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+  { content :: LocalCookingParams siteLinks userDetails eff -> R.ReactElement
   , topbar ::
     { imageSrc :: Location
-    , buttons :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+    , buttons :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement -> R.ReactElement
     }
   , leftDrawer ::
-    { buttons :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+    { buttons :: LocalCookingParams siteLinks userDetails eff -> R.ReactElement -> R.ReactElement
     }
   , userDetails ::
-    { buttons :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
-    , content :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement
+    { buttons :: LocalCookingParams siteLinks userDetails eff -> Array R.ReactElement -> R.ReactElement -> R.ReactElement
+    , content :: LocalCookingParams siteLinks userDetails eff -> R.ReactElement
     }
   , palette :: {primary :: ColorPalette, secondary :: ColorPalette}
   , extendedNetwork :: Array R.ReactElement

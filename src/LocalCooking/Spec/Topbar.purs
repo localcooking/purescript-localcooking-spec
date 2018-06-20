@@ -13,7 +13,7 @@ import Data.URI.URI (print) as URI
 import Data.URI.Location (Location, class ToLocation, toLocation)
 import Data.UUID (GENUUID)
 import Data.Maybe (Maybe (..))
-import Data.Lens (Lens', Prism', lens, prism')
+import Data.Lens (Lens', lens)
 import Text.Email.Validate as Email
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff (Eff)
@@ -66,11 +66,6 @@ type Effects eff =
 getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
 getLCState = lens id (\_ x -> x)
 
-getLCAction :: forall siteLinks userDetails. Prism' (Action siteLinks userDetails) (LocalCookingAction siteLinks userDetails)
-getLCAction = prism' LocalCookingAction $ case _ of
-  LocalCookingAction x -> Just x
-  _ -> Nothing
-
 
 spec :: forall eff siteLinks userDetailsLinks userDetails
       . LocalCookingSiteLinks siteLinks userDetailsLinks
@@ -82,7 +77,9 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
         , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , mobileMenuButtonTrigger :: Queue (write :: WRITE) (Effects eff) Unit
         , imageSrc :: Location
-        , buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+        , buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
+                  -> Array R.ReactElement -- Prefix
+                  -> R.ReactElement
         }
      -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
 spec
@@ -108,31 +105,30 @@ spec
     render dispatch props state children =
       [ appBar {color: AppBar.default, position: AppBar.fixed}
         [ toolbar {style: createStyles {display: "flex"}} $
-          ( if state.windowSize < Laptop
+          [ if state.windowSize < Laptop
             then
-              [ iconButton
+              iconButton
                 { color: IconButton.inherit
                 , onTouchTap: mkEffFn1 \_ -> dispatch ClickedMobileMenuButton
                 } menuIcon
-              ]
             else
-              [ R.img
-                [ RP.src $ URI.print $ params.toURI imageSrc
-                , RP.style {height: "2.5em", border: 0}
-                ] []
-              , button
-                { color: Button.inherit
-                , disabled: state.currentPage == rootLink
-                , onClick: mkEffFn1 preventDefault
-                , onTouchTap: mkEffFn1 \e -> do
-                    preventDefault e
-                    dispatch $ Clicked $ rootLink :: siteLinks
-                , href: URI.print $ params.toURI $ toLocation $ rootLink :: siteLinks
-                , variant: Button.flat
-                } [R.text "About"]
-              ] <> buttons params
-          ) <>
-          [ R.div [RP.style {flex: 1, display: "flex", flexDirection: "row-reverse"}] $ case state.userDetails of
+              buttons params $
+                [ R.img
+                  [ RP.src $ URI.print $ params.toURI imageSrc
+                  , RP.style {height: "2.5em", border: 0}
+                  ] []
+                , button
+                  { color: Button.inherit
+                  , disabled: state.currentPage == rootLink
+                  , onClick: mkEffFn1 preventDefault
+                  , onTouchTap: mkEffFn1 \e -> do
+                      preventDefault e
+                      dispatch $ Clicked $ rootLink :: siteLinks
+                  , href: URI.print $ params.toURI $ toLocation $ rootLink :: siteLinks
+                  , variant: Button.flat
+                  } [R.text "About"]
+                ]
+          , R.div [RP.style {flex: 1, display: "flex", flexDirection: "row-reverse"}] $ case state.userDetails of
                Nothing ->
                 [ button
                   { color: Button.inherit
@@ -166,7 +162,9 @@ topbar :: forall eff siteLinks userDetailsLinks userDetails
           , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit
           , mobileMenuButtonTrigger :: Queue (write :: WRITE) (Effects eff) Unit
           , imageSrc :: Location
-          , buttons :: LocalCookingParams siteLinks userDetails (Effects eff) -> Array R.ReactElement
+          , buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
+                    -> Array R.ReactElement
+                    -> R.ReactElement
           } -> R.ReactElement
 topbar
   params
