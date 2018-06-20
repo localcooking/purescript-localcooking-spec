@@ -4,8 +4,6 @@ import Prelude
 import Data.Array as Array
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
-import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 
 import Thermite as T
@@ -14,17 +12,10 @@ import React.DOM (div) as R
 import React.DOM.Props as RP
 import React.Queue.WhileMounted as Queue
 
-import MaterialUI.TextField (textField)
-import MaterialUI.Input as Input
-import MaterialUI.Input (inputAdornment)
-import MaterialUI.Icons.Search (searchIcon)
-
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import Queue.Types (READ, WRITE, allowWriting, allowReading)
+import Queue.Types (WRITE, allowReading)
 import Queue.One as One
-import IxQueue (IxQueue)
-import IxQueue as IxQueue
 
 
 

@@ -3,9 +3,6 @@ module LocalCooking.Spec.Common.Form.Select where
 import Prelude
 import Data.Maybe (Maybe (..))
 import Data.Either (Either (..))
-import Data.Generic (class Generic, gEq)
-import Data.Set (Set)
-import Data.Set as Set
 import Text.Parsing.StringParser (Parser, runParser)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
@@ -20,7 +17,7 @@ import React.Queue.WhileMounted as Queue
 import MaterialUI.Types (createStyles)
 import MaterialUI.Select as Select
 import MaterialUI.Input as Input
-import MaterialUI.Form (formControl, formGroup, formLabel, formControlLabel)
+import MaterialUI.Form (formControl)
 import MaterialUI.Menu (menuItem)
 
 import Unsafe.Coerce (unsafeCoerce)

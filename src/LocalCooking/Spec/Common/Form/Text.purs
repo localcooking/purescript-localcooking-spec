@@ -1,8 +1,6 @@
 module LocalCooking.Spec.Common.Form.Text where
 
 import Prelude
-import Data.Maybe (Maybe (..))
-import Data.Generic (class Generic, gEq)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)

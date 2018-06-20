@@ -4,8 +4,6 @@ import Prelude
 import Data.Array as Array
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
-import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 
 import Thermite as T
@@ -13,19 +11,12 @@ import React (ReactElement, createClass, createElement) as R
 import React.Queue.WhileMounted as Queue
 
 import MaterialUI.Types (createStyles)
-import MaterialUI.TextField (textField)
-import MaterialUI.Input as Input
-import MaterialUI.Input (inputAdornment)
 import MaterialUI.Paper (paper)
-import MaterialUI.Icons.Search (searchIcon)
 
-import Unsafe.Coerce (unsafeCoerce)
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import Queue.Types (READ, WRITE, allowWriting, allowReading)
+import Queue.Types (WRITE, allowReading)
 import Queue.One as One
-import IxQueue (IxQueue)
-import IxQueue as IxQueue
 
 
 
