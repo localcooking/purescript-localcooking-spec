@@ -1,11 +1,12 @@
 module LocalCooking.Spec.Tag where
 
 import LocalCooking.Common.Tag (Tag (..))
-import LocalCooking.Common.Tag.Meal (MealTag (..))
 import LocalCooking.Common.Tag.Chef (ChefTag (..))
-import LocalCooking.Common.Diet (Diet (..))
-import LocalCooking.Common.Culture (Culture (..))
-import LocalCooking.Common.Ingredient (IngredientName (..))
+import LocalCooking.Common.Tag.Culture (CultureTag (..))
+import LocalCooking.Common.Tag.Diet (DietTag (..))
+import LocalCooking.Common.Tag.Farm (FarmTag (..))
+import LocalCooking.Common.Tag.Ingredient (IngredientTag (..))
+import LocalCooking.Common.Tag.Meal (MealTag (..))
 
 import Prelude
 import Data.Maybe (Maybe (..))
@@ -26,11 +27,12 @@ import MaterialUI.Chip as Chip
 
 
 data AnyTag
-  = TagDiet Diet
-  | TagIngredient IngredientName
+  = TagChef ChefTag
+  | TagCulture CultureTag
+  | TagDiet DietTag
+  | TagFarm FarmTag
+  | TagIngredient IngredientTag
   | TagMeal MealTag
-  | TagChef ChefTag
-  | TagCulture Culture
 
 
 
@@ -71,16 +73,18 @@ spec {onClick,onDelete,tag} = T.simpleSpec performAction render
               TagMeal _ -> "#f441d4"
               TagChef _ -> ""
               TagCulture _ -> "#419ef4"
+              TagFarm _ -> ""
             }
           }
         )
         \{classes} ->
         let label = R.text $ case tag of
-              TagDiet (Diet x) -> x
-              TagIngredient (IngredientName x) -> x
-              TagMeal (MealTag (Tag x)) -> x
               TagChef (ChefTag (Tag x)) -> x
-              TagCulture (Culture x) -> x
+              TagCulture (CultureTag (Tag x)) -> x
+              TagDiet (DietTag (Tag x)) -> x
+              TagIngredient (IngredientTag (Tag x)) -> x
+              TagFarm (FarmTag (Tag x)) -> x
+              TagMeal (MealTag (Tag x)) -> x
         in  case Tuple onClick onDelete of
               Tuple (Just onClick') (Just onDelete') -> chip
                 { label
