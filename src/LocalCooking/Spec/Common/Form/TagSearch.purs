@@ -14,6 +14,7 @@ import Data.Array as Array
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Ref (REF)
+import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 
@@ -62,6 +63,7 @@ type Effects eff =
 
 spec :: forall eff tag
       . Eq tag
+     => Show tag
      => { search ::
           { updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
           , signal :: IxSignal (Effects eff) String
@@ -111,11 +113,14 @@ spec
         One.putQueue decisions.delQueue x
         One.putQueue results.addQueue [x]
       SearchEntered -> liftEff $ do
+        unsafeCoerceEff $ log "Search entered..."
         One.putQueue results.clearQueue unit
       SearchUpdated term -> liftEff $ do
+        unsafeCoerceEff $ log $ "Search updated: " <> term
         One.putQueue results.pendingQueue unit
         tagSearch term
       GotResults rs -> liftEff $ do
+        unsafeCoerceEff $ log $ "Results: " <> show rs
         One.putQueue results.setQueue rs
         IxSignal.set (not (Array.null rs)) submit.disabled
 
@@ -178,6 +183,7 @@ spec
 
 genericTagSearch :: forall eff tag
                   . Eq tag
+                 => Show tag
                  => { tagSearch    :: String -> Eff (Effects eff) Unit
                     , resultsQueue :: One.Queue (write :: WRITE) (Effects eff) (Array tag)
                     , label        :: String
