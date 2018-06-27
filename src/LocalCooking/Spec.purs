@@ -103,7 +103,7 @@ type TemplateArgs eff siteLinks userDetails =
 
 
 
-spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
+spec :: forall eff siteLinks userDetailsLinks userDetails
       . LocalCookingSiteLinks siteLinks userDetailsLinks
      => Eq siteLinks
      => ToLocation siteLinks
@@ -111,7 +111,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
      => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { env                 :: Env
         , globalErrorQueue    :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
-        , dependenciesQueues  :: DependenciesQueues siteQueues (Effects eff)
+        , dependenciesQueues  :: DependenciesQueues (Effects eff)
         , authTokenInitIn     :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , authTokenDeltaIn    :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
         , userInitIn          :: UserInitIn -> Eff (Effects eff) Unit
@@ -204,7 +204,7 @@ spec
 
 
 
-app :: forall eff siteLinks userDetailsLinks userDetails siteQueues
+app :: forall eff siteLinks userDetailsLinks userDetails
      . LocalCookingSiteLinks siteLinks userDetailsLinks
     => Eq siteLinks
     => ToLocation siteLinks
@@ -218,7 +218,7 @@ app :: forall eff siteLinks userDetailsLinks userDetails siteQueues
            { closeQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
            }
          }
-       , dependenciesQueues :: DependenciesQueues siteQueues (Effects eff)
+       , dependenciesQueues :: DependenciesQueues (Effects eff)
        -- FIXME TODO restrict authTokenQueues from being visible
        , authTokenInitIn  :: AuthTokenInitIn -> Eff (Effects eff) Unit
        , authTokenDeltaIn :: AuthTokenDeltaIn -> Eff (Effects eff) Unit

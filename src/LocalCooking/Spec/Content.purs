@@ -77,7 +77,7 @@ getLCState = lens id (\_ x -> x)
 
 
 
-spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
+spec :: forall eff siteLinks userDetailsLinks userDetails
       . ToLocation siteLinks
      => LocalCookingSiteLinks siteLinks userDetailsLinks
      => Eq siteLinks
@@ -85,7 +85,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails siteQueues
      => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { env                :: Env
         , globalErrorQueue   :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
-        , dependenciesQueues :: DependenciesQueues siteQueues (Effects eff)
+        , dependenciesQueues :: DependenciesQueues (Effects eff)
         , authTokenInitIn    :: AuthTokenInitIn -> Eff (Effects eff) Unit
         , authTokenDeltaIn   :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
         , userDeltaIn        :: UserDeltaIn -> Eff (Effects eff) Unit
@@ -280,7 +280,7 @@ spec
         flagHeight = 26
 
 
-content :: forall eff siteLinks userDetailsLinks userDetails siteQueues
+content :: forall eff siteLinks userDetailsLinks userDetails
          . LocalCookingSiteLinks siteLinks userDetailsLinks
         => Eq siteLinks
         => ToLocation siteLinks
@@ -289,7 +289,7 @@ content :: forall eff siteLinks userDetailsLinks userDetails siteQueues
         -> { env                :: Env
            , globalErrorQueue   :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
            -- FIXME TODO restrict authTokenQueues from being visible
-           , dependenciesQueues :: DependenciesQueues siteQueues (Effects eff)
+           , dependenciesQueues :: DependenciesQueues (Effects eff)
            , authTokenInitIn    :: AuthTokenInitIn -> Eff (Effects eff) Unit
            , authTokenDeltaIn   :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
            , userDeltaIn        :: UserDeltaIn -> Eff (Effects eff) Unit
