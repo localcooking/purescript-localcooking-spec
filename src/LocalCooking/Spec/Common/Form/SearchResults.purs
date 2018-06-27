@@ -4,7 +4,6 @@ import LocalCooking.Spec.Common.Pending (pending)
 
 import Prelude
 import Data.Array as Array
-import Data.Maybe (Maybe (..))
 import Data.UUID (GENUUID)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
@@ -24,12 +23,18 @@ import Queue.One as One
 
 
 
+data SearchResults a
+  = None
+  | Pending
+  | Some (Array a)
+
+
 type State a =
-  { results :: Maybe (Array a)
+  { results :: SearchResults a
   , rerender :: Unit
   }
 
-initialState :: forall a. {initResults :: Maybe (Array a)} -> State a
+initialState :: forall a. {initResults :: SearchResults a} -> State a
 initialState {initResults} =
   { results: initResults
   , rerender: unit
@@ -39,6 +44,7 @@ data Action a
   = SetResults (Array a)
   | AddResults (Array a)
   | ClearResults
+  | PendingResults
   | DelResult a
   | ReRender
 
@@ -51,7 +57,7 @@ type Effects eff =
 
 spec :: forall eff a
       . Eq a
-     => { resultsSignal :: IxSignal (Effects eff) (Maybe (Array a))
+     => { resultsSignal :: IxSignal (Effects eff) (SearchResults a)
         , renderA       :: a -> R.ReactElement
         , pendingSignal :: IxSignal (Effects eff) Boolean
         } -> T.Spec (Effects eff) (State a) Unit (Action a)
@@ -64,27 +70,36 @@ spec
     performAction action props state = case action of
       SetResults xs -> do
         liftEff (IxSignal.set false pendingSignal)
-        liftEff (IxSignal.set (Just xs) resultsSignal)
-        void $ T.cotransform _ { results = Just xs }
+        liftEff (IxSignal.set (Some xs) resultsSignal)
+        void $ T.cotransform _ { results = Some xs }
         performAction ReRender props state
       AddResults xs -> do
         mYs <- liftEff $ IxSignal.get resultsSignal
         let zs = case mYs of
-                    Nothing -> xs
-                    Just ys -> ys <> xs
-        liftEff $ IxSignal.set (Just zs) resultsSignal
-        void $ T.cotransform _ { results = Just zs }
+                    None -> xs
+                    Pending -> xs
+                    Some ys -> ys <> xs
+        liftEff $ IxSignal.set (Some zs) resultsSignal
+        void $ T.cotransform _ { results = Some zs }
         performAction ReRender props state
       ClearResults -> do
         liftEff (IxSignal.set true pendingSignal)
-        liftEff (IxSignal.set Nothing resultsSignal)
-        void $ T.cotransform _ { results = Nothing }
+        liftEff (IxSignal.set None resultsSignal)
+        void $ T.cotransform _ { results = None }
+        performAction ReRender props state
+      PendingResults -> do
+        liftEff (IxSignal.set true pendingSignal)
+        liftEff (IxSignal.set Pending resultsSignal)
+        void $ T.cotransform _ { results = Pending }
         performAction ReRender props state
       DelResult x -> do
-        mYs <- liftEff $ IxSignal.get resultsSignal
+        mYs <- liftEff (IxSignal.get resultsSignal)
         let mZs = case mYs of
-                    Nothing -> Nothing
-                    Just ys -> Just $ Array.filter (\y -> y /= x) ys
+                    None -> None
+                    Pending -> Pending
+                    Some ys ->
+                      let zs = Array.filter (\y -> y /= x) ys
+                      in  if Array.null zs then None else Some zs
         liftEff $ IxSignal.set mZs resultsSignal
         void $ T.cotransform _ { results = mZs }
         performAction ReRender props state
@@ -99,8 +114,9 @@ spec
           , padding: "0.5em"
           }
         ] $ case state.results of
-          Nothing -> [pending {pendingSignal}]
-          Just rs -> map renderA rs
+          None -> []
+          Pending -> [pending {pendingSignal}]
+          Some rs -> map renderA rs
       ]
 
 
@@ -110,11 +126,12 @@ results :: forall eff a
         => { setQueue :: One.Queue (write :: WRITE) (Effects eff) (Array a)
            , addQueue :: One.Queue (write :: WRITE) (Effects eff) (Array a)
            , clearQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
+           , pendingQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
            , delQueue :: One.Queue (write :: WRITE) (Effects eff) a
-           , resultsSignal :: IxSignal (Effects eff) (Maybe (Array a))
+           , resultsSignal :: IxSignal (Effects eff) (SearchResults a)
            , renderA :: a -> R.ReactElement
            } -> R.ReactElement
-results {setQueue,addQueue,clearQueue,delQueue,resultsSignal,renderA} =
+results {setQueue,addQueue,clearQueue,delQueue,pendingQueue,resultsSignal,renderA} =
   let init =
         { initResults: unsafePerformEff (IxSignal.get resultsSignal)
         }
@@ -135,6 +152,9 @@ results {setQueue,addQueue,clearQueue,delQueue,resultsSignal,renderA} =
         $ Queue.whileMountedOne
             (allowReading clearQueue)
             (\this _ -> unsafeCoerceEff $ dispatcher this ClearResults)
+        $ Queue.whileMountedOne
+            (allowReading pendingQueue)
+            (\this _ -> unsafeCoerceEff $ dispatcher this PendingResults)
         $ Queue.whileMountedOne
             (allowReading delQueue)
             (\this x -> unsafeCoerceEff $ dispatcher this $ DelResult x)
