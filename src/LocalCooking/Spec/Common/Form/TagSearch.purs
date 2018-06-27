@@ -176,17 +176,17 @@ spec
       ]
 
 
-diets :: forall eff tag
-       . Eq tag
-      => { tagSearch    :: String -> Eff (Effects eff) Unit
-         , resultsQueue :: One.Queue (write :: WRITE) (Effects eff) (Array tag)
-         , label        :: String
-         , headline     :: String
-         , id           :: String
-         , constructTag :: tag -> AnyTag
-         }
-      -> R.ReactElement
-diets {tagSearch,label,headline,id,constructTag,resultsQueue} =
+genericTagSearch :: forall eff tag
+                  . Eq tag
+                 => { tagSearch    :: String -> Eff (Effects eff) Unit
+                    , resultsQueue :: One.Queue (write :: WRITE) (Effects eff) (Array tag)
+                    , label        :: String
+                    , headline     :: String
+                    , id           :: String
+                    , constructTag :: tag -> AnyTag
+                    }
+                 -> R.ReactElement
+genericTagSearch {tagSearch,label,headline,id,constructTag,resultsQueue} =
   let {spec: reactSpec, dispatcher} =
         T.createReactSpec
           ( spec
