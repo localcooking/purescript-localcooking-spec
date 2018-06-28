@@ -95,7 +95,7 @@ loginDialog
       , href: URI.print $ toURI $ toLocation $ registerLink :: siteLinks
       } [R.text "Register"]
     ]
-  , title: "Login"
+  , title: \_ -> "Login"
   , submitValue: Just "Submit"
   , pends: true
   , content:

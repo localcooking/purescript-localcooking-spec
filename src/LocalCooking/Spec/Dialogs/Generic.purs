@@ -97,7 +97,7 @@ spec :: forall eff siteLinks userDetails userDetailsLinks input output
           { close :: Eff (Effects eff) Unit
           , input :: input
           } -> Array R.ReactElement
-        , title :: String
+        , title :: input -> String
         , submit ::
           { disabledSignal :: IxSignal (Effects eff) Boolean
           , queue          :: IxQueue (read :: READ) (Effects eff) Unit
@@ -175,7 +175,7 @@ spec
         in  dialog' $ case state.open of
               Nothing -> []
               Just input ->
-                [ dialogTitle {} [R.text title]
+                [ dialogTitle {} [R.text (title input)]
                 , dialogContent {style: createStyles {position: "relative"}} $
                     ( content.component
                       { submitDisabled: \d -> IxSignal.set d submit.disabledSignal
@@ -232,7 +232,7 @@ genericDialog :: forall eff siteLinks userDetails userDetailsLinks input output
                     { close :: Eff (Effects eff) Unit
                     , input :: input
                     } -> Array R.ReactElement
-                 , title             :: String
+                 , title             :: input -> String
                  , submitValue       :: Maybe String
                  , pends             :: Boolean
                  , content ::

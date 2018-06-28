@@ -47,7 +47,7 @@ privacyPolicyDialog
   { dialogQueue: privacyPolicyDialogQueue
   , closeQueue: Nothing
   , buttons: \_ -> []
-  , title: "Privacy Policy"
+  , title: \_ -> "Privacy Policy"
   , submitValue: Just "Acknowledge"
   , pends: false
   , content:
