@@ -32,12 +32,12 @@ type Effects eff =
 
 
 privacyPolicyDialog :: forall eff siteLinks userDetails userDetailsLinks
-             . LocalCookingSiteLinks siteLinks userDetailsLinks
-            => ToLocation siteLinks
-            => LocalCookingParams siteLinks userDetails (Effects eff)
-            -> { privacyPolicyDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
-               }
-            -> R.ReactElement
+                     . LocalCookingSiteLinks siteLinks userDetailsLinks
+                    => ToLocation siteLinks
+                    => LocalCookingParams siteLinks userDetails (Effects eff)
+                    -> { privacyPolicyDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
+                       }
+                    -> R.ReactElement
 privacyPolicyDialog
   params@{toURI}
   { privacyPolicyDialogQueue
