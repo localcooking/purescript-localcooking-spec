@@ -101,7 +101,7 @@ spec :: forall eff siteLinks userDetails userDetailsLinks input output
         , submit ::
           { disabledSignal :: IxSignal (Effects eff) Boolean
           , queue          :: IxQueue (read :: READ) (Effects eff) Unit
-          , value          :: String
+          , value          :: Maybe String
           }
         , pendingSignal :: Maybe (IxSignal (Effects eff) Boolean)
         }
@@ -196,22 +196,27 @@ spec
                         One.putQueue dialogOutputQueue Nothing
                     , input
                     } <>
-                      [ Submit.submit
-                        { color: Button.primary
-                        , variant: Button.flat
-                        , size: Button.medium
-                        , style: createStyles {}
-                        , triggerQueue: submit.queue
-                        , disabledSignal: submit.disabledSignal
-                        , fullWidth: false
-                        } [R.text submit.value]
-                      , button
-                        { color: Button.default
-                        , onTouchTap: mkEffFn1 \_ -> do
-                            unsafeCoerceEff (One.putQueue dialogOutputQueue Nothing)
-                            dispatch Close
-                        } [R.text "Cancel"]
-                      ]
+                    ( let cancelButton = button
+                            { color: Button.default
+                            , onTouchTap: mkEffFn1 \_ -> do
+                                unsafeCoerceEff (One.putQueue dialogOutputQueue Nothing)
+                                dispatch Close
+                            } [R.text "Cancel"]
+                      in  case submit.value of
+                            Nothing -> [cancelButton]
+                            Just submitValue ->
+                              [ Submit.submit
+                                { color: Button.primary
+                                , variant: Button.flat
+                                , size: Button.medium
+                                , style: createStyles {}
+                                , triggerQueue: submit.queue
+                                , disabledSignal: submit.disabledSignal
+                                , fullWidth: false
+                                } [R.text submitValue]
+                              , cancelButton
+                              ]
+                    )
                 ]
       ]
 
@@ -228,7 +233,7 @@ genericDialog :: forall eff siteLinks userDetails userDetailsLinks input output
                     , input :: input
                     } -> Array R.ReactElement
                  , title             :: String
-                 , submitValue       :: String
+                 , submitValue       :: Maybe String
                  , pends             :: Boolean
                  , content ::
                    { component ::

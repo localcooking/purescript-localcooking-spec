@@ -68,7 +68,7 @@ authenticateDialog
   , closeQueue: Nothing
   , buttons: \_ -> []
   , title: "Authenticate"
-  , submitValue: "Submit"
+  , submitValue: Just "Submit"
   , pends: true
   , content:
     { component: \{submitDisabled} ->

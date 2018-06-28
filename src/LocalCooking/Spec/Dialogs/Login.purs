@@ -96,7 +96,7 @@ loginDialog
       } [R.text "Register"]
     ]
   , title: "Login"
-  , submitValue: "Submit"
+  , submitValue: Just "Submit"
   , pends: true
   , content:
     { component: \{submitDisabled} ->

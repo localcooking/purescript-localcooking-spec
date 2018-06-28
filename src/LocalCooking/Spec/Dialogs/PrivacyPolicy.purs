@@ -48,7 +48,7 @@ privacyPolicyDialog
   , closeQueue: Nothing
   , buttons: \_ -> []
   , title: "Privacy Policy"
-  , submitValue: "Acknowledge"
+  , submitValue: Just "Acknowledge"
   , pends: false
   , content:
     { component: \_ ->
