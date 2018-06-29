@@ -105,7 +105,7 @@ spec
       [ textField
         { label
         , fullWidth
-        , value: Input.valueString (show state.permalink)
+        , value: Input.valueString state.permalink
         , onChange: mkEffFn1 \e -> dispatch $ ChangedPermalink (unsafeCoerce e).target.value
         , onBlur: mkEffFn1 \_ -> dispatch PermalinkUnfocused
         , name: id
