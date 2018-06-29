@@ -3,6 +3,7 @@ module LocalCooking.Spec.Common.Form.Permalink where
 import Prelude
 import Data.Either (Either (..))
 import Data.String.Permalink (Permalink, permalinkParser)
+import Data.Generic (class Generic, gEq)
 import Text.Parsing.StringParser (runParser)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
@@ -26,6 +27,9 @@ import IxQueue as IxQueue
 
 
 
+-- TODO bind to validation queues
+
+
 type State =
   { permalink :: String
   , rerender :: Unit
@@ -39,7 +43,7 @@ initialState {initPermalink} =
 
 data Action
   = ChangedPermalink String
-  | SetPermalink Permalink
+  | SetPermalink PermalinkState
   | PermalinkUnfocused
   | ReRender
 
@@ -48,8 +52,20 @@ type Effects eff =
   | eff)
 
 
+data PermalinkState
+  = PermalinkPartial String
+  | PermalinkBad String
+  | PermalinkGood Permalink
+
+derive instance genericPermalinkState :: Generic PermalinkState
+
+instance eqPermalinkState :: Eq PermalinkState where
+  eq = gEq
+
+
+
 spec :: forall eff
-      . { permalinkSignal :: IxSignal (Effects eff) Permalink
+      . { permalinkSignal :: IxSignal (Effects eff) PermalinkState
         , updatedQueue    :: IxQueue (read :: READ) (Effects eff) Unit
         , label           :: R.ReactElement
         , fullWidth       :: Boolean
@@ -65,22 +81,23 @@ spec
   where
     performAction action props state = case action of
       ChangedPermalink n -> do
+        liftEff (IxSignal.set (PermalinkPartial n) permalinkSignal)
         void $ T.cotransform _ { permalink = n }
-        case runParser permalinkParser n of
-          Left _ -> pure unit
-          Right x -> liftEff (IxSignal.set x permalinkSignal)
       SetPermalink x -> do
         liftEff (IxSignal.set x permalinkSignal)
-        void $ T.cotransform _ { permalink = show x }
+        void $ T.cotransform _ { permalink = case x of
+                                    PermalinkPartial y -> y
+                                    PermalinkBad y -> y
+                                    PermalinkGood y -> show y
+                               }
         performAction ReRender props state
         liftEff $ IxQueue.broadcastIxQueue (allowWriting updatedQueue) unit
       PermalinkUnfocused -> do
-        case runParser permalinkParser state.permalink of
-          Left _ -> pure unit
-          Right x -> do
-            liftEff $ IxSignal.set x permalinkSignal
-            liftEff $ IxQueue.broadcastIxQueue (allowWriting updatedQueue) unit
+        liftEff $ case runParser permalinkParser state.permalink of
+          Left _ -> IxSignal.set (PermalinkBad state.permalink) permalinkSignal
+          Right x -> IxSignal.set (PermalinkGood x) permalinkSignal
         performAction ReRender props state
+        liftEff $ IxQueue.broadcastIxQueue (allowWriting updatedQueue) unit
       ReRender -> void $ T.cotransform _ { rerender = unit }
 
     render :: T.Render State Unit Action
@@ -92,9 +109,10 @@ spec
         , onChange: mkEffFn1 \e -> dispatch $ ChangedPermalink (unsafeCoerce e).target.value
         , onBlur: mkEffFn1 \_ -> dispatch PermalinkUnfocused
         , name: id
-        , error: case runParser permalinkParser state.permalink of
-          Left _ -> true
-          _ -> false
+        , error: case unsafePerformEff (IxSignal.get permalinkSignal) of
+          PermalinkPartial _ -> false
+          PermalinkBad _ -> true
+          PermalinkGood _ -> false
         , id
         } []
       ]
@@ -106,12 +124,15 @@ permalink :: forall eff
              , fullWidth       :: Boolean
              , id              :: String
              , updatedQueue    :: IxQueue (read :: READ) (Effects eff) Unit
-             , permalinkSignal :: IxSignal (Effects eff) Permalink
-             , setQueue        :: One.Queue (write :: WRITE) (Effects eff) Permalink
+             , permalinkSignal :: IxSignal (Effects eff) PermalinkState
+             , setQueue        :: One.Queue (write :: WRITE) (Effects eff) PermalinkState
              } -> R.ReactElement
 permalink {label,fullWidth,id,updatedQueue,permalinkSignal,setQueue} =
   let init =
-        { initPermalink: unsafePerformEff (show <$> IxSignal.get permalinkSignal)
+        { initPermalink: case unsafePerformEff (IxSignal.get permalinkSignal) of
+            PermalinkPartial x -> x
+            PermalinkBad x -> x
+            PermalinkGood x -> show x
         }
       {spec: reactSpec, dispatcher} =
         T.createReactSpec
