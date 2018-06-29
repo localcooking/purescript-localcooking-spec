@@ -1,5 +1,6 @@
 module React.Markdown where
 
+import Prelude (Unit)
 import React (ReactClass, ReactElement, createElement)
 import Data.Record.Class (class Subrow)
 import Data.String.Markdown (MarkdownText)
@@ -18,94 +19,38 @@ type MarkdownPropsO renderers =
   , renderers :: { | renderers }
   )
 
-type MarkdownRenderers
-  rootProps
-  breakProps
-  paragraphProps
-  emphasisProps
-  strongProps
-  thematicBreakProps
-  blockquoteProps
-  deleteProps
-  linkProps
-  imageProps
-  linkReferenceProps
-  imageReferenceProps
-  tableProps
-  tableHeadProps
-  tableBodyProps
-  tableRowProps
-  tableCellProps
-  listProps
-  listItemProps
-  definitionProps
-  headingProps
-  inlineCodeProps
-  codeProps
-  htmlProps
-  =
-  ( root :: ReactClass rootProps
+type MarkdownRenderers =
+  ( root :: ReactClass Unit
   , text :: String -> ReactElement
-  , break :: ReactClass breakProps
-  , paragraph :: ReactClass paragraphProps
-  , emphasis :: ReactClass emphasisProps
-  , strong :: ReactClass strongProps
-  , thematicBreak :: ReactClass thematicBreakProps
-  , blockquote :: ReactClass blockquoteProps
-  , delete :: ReactClass deleteProps
-  , link :: ReactClass linkProps
-  , image :: ReactClass imageProps
-  , linkReference :: ReactClass linkReferenceProps
-  , imageReference :: ReactClass imageReferenceProps
-  , table :: ReactClass tableProps
-  , tableHead :: ReactClass tableHeadProps
-  , tableBody :: ReactClass tableBodyProps
-  , tableRow :: ReactClass tableRowProps
-  , tableCell :: ReactClass tableCellProps
-  , list :: ReactClass listProps
-  , listItem :: ReactClass listItemProps
-  , definition :: ReactClass definitionProps
-  , heading :: ReactClass headingProps
-  , inlineCode :: ReactClass inlineCodeProps
-  , code :: ReactClass codeProps
-  , html :: ReactClass htmlProps
+  , break :: ReactClass Unit
+  , paragraph :: ReactClass Unit
+  , emphasis :: ReactClass Unit
+  , strong :: ReactClass Unit
+  , thematicBreak :: ReactClass Unit
+  , blockquote :: ReactClass Unit
+  , delete :: ReactClass Unit
+  , link :: ReactClass Unit
+  , image :: ReactClass Unit
+  , linkReference :: ReactClass Unit
+  , imageReference :: ReactClass Unit
+  , table :: ReactClass Unit
+  , tableHead :: ReactClass Unit
+  , tableBody :: ReactClass Unit
+  , tableRow :: ReactClass Unit
+  , tableCell :: ReactClass Unit
+  , list :: ReactClass Unit
+  , listItem :: ReactClass Unit
+  , definition :: ReactClass Unit
+  , heading :: ReactClass Unit
+  , inlineCode :: ReactClass Unit
+  , code :: ReactClass Unit
+  , html :: ReactClass Unit
   )
 
 
 
 markdown :: forall o renderers
-            rootProps breakProps paragraphProps emphasisProps strongProps
-            thematicBreakProps blockquoteProps deleteProps linkProps imageProps
-            linkReferenceProps imageReferenceProps tableProps tableHeadProps
-            tableBodyProps tableRowProps tableCellProps listProps listItemProps
-            definitionProps headingProps inlineCodeProps codeProps htmlProps
           . Subrow o (MarkdownPropsO renderers)
-         => Subrow renderers
-            ( MarkdownRenderers
-                rootProps
-                breakProps
-                paragraphProps
-                emphasisProps
-                strongProps
-                thematicBreakProps
-                blockquoteProps
-                deleteProps
-                linkProps
-                imageProps
-                linkReferenceProps
-                imageReferenceProps
-                tableProps
-                tableHeadProps
-                tableBodyProps
-                tableRowProps
-                tableCellProps
-                listProps
-                listItemProps
-                definitionProps
-                headingProps
-                inlineCodeProps
-                codeProps
-                htmlProps
-            )
+         => Subrow renderers MarkdownRenderers
          => MarkdownProps o -> ReactElement
 markdown props = createElement markdownImpl props []
