@@ -1,19 +1,15 @@
 module React.Markdown where
 
-import Prelude
-import React (Event, ReactClass, createElement, createClassStateless, ReactElement, ReactProps, ReactState, ReactRefs, ReadOnly, ReadWrite)
+import React (ReactClass, ReactElement, createElement)
 import Data.Record.Class (class Subrow)
-import Data.Function.Uncurried (Fn2, runFn2)
-import Control.Monad.Eff.Uncurried (EffFn1)
-import Unsafe.Coerce (unsafeCoerce)
-import Type.Row (class RowToList, class ListToRow)
+import Data.String.Markdown (MarkdownText)
 
 
 
 foreign import markdownImpl :: forall props. ReactClass props
 
 type MarkdownProps o =
-  { source :: String
+  { source :: MarkdownText
   | o
   }
 
