@@ -16,7 +16,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Aff (Aff, delay)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff, unsafePerformEff)
-import Control.Monad.Eff.Ref (REF)
+import Control.Monad.Eff.Ref (REF, newRef, writeRef, readRef)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Class (liftEff)
 
@@ -74,7 +74,7 @@ type Effects eff =
   | eff)
 
 
-getLCState :: forall input siteLinks userDetails
+getLCState :: forall input siteLinks
             . Lens' (State input siteLinks) (LocalCookingStateLight siteLinks)
 getLCState = lens (_.localCooking) (_ { localCooking = _ })
 
@@ -273,6 +273,16 @@ genericDialog
             , dialogOutputQueue
             } )
           (initialState (unsafePerformEff (initLocalCookingStateLight params)))
+      _ = unsafePerformEff $ do
+            case closeQueue of
+              Nothing -> pure unit
+              Just closeQueue' ->
+                One.onQueue (allowReading closeQueue') $ \_ -> case innerCloseQueue of
+                  Nothing -> pure unit
+                  Just innerCloseQueue' -> do
+                    -- relay to inner close only when mounted - drain otherwise
+                    isMounted <- readRef isMountedRef
+                    when isMounted $ One.putQueue innerCloseQueue' unit
       reactSpec' =
           whileMountedLocalCookingLight
             params
@@ -282,20 +292,28 @@ genericDialog
         $ Queue.whileMountedOne
             dialogInputQueue
             (\this x -> unsafeCoerceEff $ dispatcher this $ Open x)
-        $ ( case closeQueue of
+        $ ( case innerCloseQueue of
               Nothing -> id
-              Just closeQueue' ->
+              Just innerCloseQueue' ->
                 Queue.whileMountedOne
-                  (allowReading closeQueue')
+                  innerCloseQueue'
                   (\this _ -> unsafeCoerceEff $ dispatcher this Close)
           )
         $ Queue.whileMountedIx
             submitQueue
             "onSubmit"
             (\this _ -> unsafeCoerceEff $ dispatcher this Submit)
-            reactSpec
+        $   reactSpec
+            { componentDidMount = \_ -> writeRef isMountedRef true
+            , componentWillUnmount = \_ -> writeRef isMountedRef false
+            }
   in  R.createElement (R.createClass reactSpec') unit []
   where
     submitDisabledSignal = unsafePerformEff $ IxSignal.make false
     pendingSignal = if pends then unsafePerformEff (Just <$> IxSignal.make false) else Nothing
     submitQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
+    -- replicate close queue, to drain when not mounted
+    innerCloseQueue = unsafePerformEff $ case closeQueue of
+      Nothing -> pure Nothing
+      Just _ -> Just <$> One.newQueue
+    isMountedRef = unsafePerformEff $ newRef false
