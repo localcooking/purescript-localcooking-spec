@@ -106,6 +106,7 @@ type TemplateArgs eff siteLinks userDetails =
 spec :: forall eff siteLinks userDetailsLinks userDetails
       . LocalCookingSiteLinks siteLinks userDetailsLinks
      => Eq siteLinks
+     => Eq userDetails
      => ToLocation siteLinks
      => UserDetails userDetails
      => LocalCookingParams siteLinks userDetails (Effects eff)
@@ -207,6 +208,7 @@ spec
 app :: forall eff siteLinks userDetailsLinks userDetails
      . LocalCookingSiteLinks siteLinks userDetailsLinks
     => Eq siteLinks
+    => Eq userDetails
     => ToLocation siteLinks
     => UserDetails userDetails
     => LocalCookingParams siteLinks userDetails (Effects eff)

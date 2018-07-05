@@ -47,6 +47,7 @@ type Effects eff =
 
 authenticateDialog :: forall eff siteLinks userDetails userDetailsLinks
                     . LocalCookingSiteLinks siteLinks userDetailsLinks
+                   => Eq siteLinks
                    => ToLocation siteLinks
                    => LocalCookingParams siteLinks userDetails (Effects eff)
                    -> { authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)

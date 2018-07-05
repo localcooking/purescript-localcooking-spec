@@ -283,6 +283,8 @@ newtype SecurityUnsavedFormData = SecurityUnsavedFormData
 
 security :: forall eff siteLinks userDetails userDetailsLinks
           . UserDetails userDetails
+         => Eq siteLinks
+         => Eq userDetails
          => LocalCookingSiteLinks siteLinks userDetailsLinks
          => ToLocation siteLinks
          => LocalCookingParams siteLinks userDetails (Effects eff)

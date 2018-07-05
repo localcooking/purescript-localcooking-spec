@@ -155,6 +155,7 @@ spec
 topbar :: forall eff siteLinks userDetailsLinks userDetails
         . LocalCookingSiteLinks siteLinks userDetailsLinks
        => Eq siteLinks
+       => Eq userDetails
        => ToLocation siteLinks
        => UserDetails userDetails
        => LocalCookingParams siteLinks userDetails (Effects eff)

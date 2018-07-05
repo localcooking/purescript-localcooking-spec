@@ -6,7 +6,7 @@ import LocalCooking.Spec.Misc.Flags.USA (usaFlag, usaFlagViewBox)
 import LocalCooking.Spec.Misc.Flags.Colorado (coloradoFlag, coloradoFlagViewBox)
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Dialogs (AllDialogs)
-import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, initLocalCookingState, performActionLocalCooking, LocalCookingAction, whileMountedLocalCooking)
+import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingStateLight, initLocalCookingStateLight, performActionLocalCookingLight, LocalCookingActionLight, whileMountedLocalCookingLight)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn (AuthTokenDeltaInLogout))
 import LocalCooking.Dependencies.Common (UserDeltaIn)
@@ -52,15 +52,15 @@ import Queue.One as One
 
 
 
-type State siteLinks userDetails = LocalCookingState siteLinks userDetails
+type State siteLinks = LocalCookingStateLight siteLinks
 
 
-initialState :: forall siteLinks userDetails
-              . LocalCookingState siteLinks userDetails -> State siteLinks userDetails
+initialState :: forall siteLinks
+              . LocalCookingStateLight siteLinks -> State siteLinks
 initialState = id
 
 
-type Action siteLinks userDetails = LocalCookingAction siteLinks userDetails
+type Action siteLinks = LocalCookingActionLight siteLinks
 
 
 type Effects eff =
@@ -72,7 +72,7 @@ type Effects eff =
   , scrypt     :: SCRYPT
   | eff)
 
-getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
+getLCState :: forall siteLinks. Lens' (State siteLinks) (LocalCookingStateLight siteLinks)
 getLCState = lens id (\_ x -> x)
 
 
@@ -81,6 +81,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
       . ToLocation siteLinks
      => LocalCookingSiteLinks siteLinks userDetailsLinks
      => Eq siteLinks
+     => Eq userDetails
      => UserDetails userDetails
      => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { env                :: Env
@@ -109,7 +110,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
           , extendedNetwork :: Array R.ReactElement
           }
         }
-     -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
+     -> T.Spec (Effects eff) (State siteLinks) Unit (Action siteLinks)
 spec
   params
   { env
@@ -122,9 +123,9 @@ spec
   , templateArgs
   } = T.simpleSpec performAction render
   where
-    performAction = performActionLocalCooking getLCState
+    performAction = performActionLocalCookingLight getLCState
 
-    render :: T.Render (State siteLinks userDetails) Unit (Action siteLinks userDetails)
+    render :: T.Render (State siteLinks) Unit (Action siteLinks)
     render dispatch props state children =
       [ R.main [RP.style {marginTop: "4.5em"}]
         [ paper
@@ -283,6 +284,7 @@ spec
 content :: forall eff siteLinks userDetailsLinks userDetails
          . LocalCookingSiteLinks siteLinks userDetailsLinks
         => Eq siteLinks
+        => Eq userDetails
         => ToLocation siteLinks
         => UserDetails userDetails
         => LocalCookingParams siteLinks userDetails (Effects eff)
@@ -338,9 +340,9 @@ content
           , dialogQueues
           , templateArgs
           }
-        ) (initialState (unsafePerformEff (initLocalCookingState params)))
+        ) (initialState (unsafePerformEff (initLocalCookingStateLight params)))
       reactSpec' =
-          whileMountedLocalCooking
+          whileMountedLocalCookingLight
             params
             "LocalCooking.Spec"
             id

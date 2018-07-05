@@ -54,6 +54,7 @@ type AllDialogs eff =
 
 dialogs :: forall eff siteLinks userDetails userDetailsLinks
          . LocalCookingSiteLinks siteLinks userDetailsLinks
+        => Eq siteLinks
         => ToLocation siteLinks
         => LocalCookingParams siteLinks userDetails (Effects eff)
         -> { dialogQueues :: AllDialogs (Effects eff)

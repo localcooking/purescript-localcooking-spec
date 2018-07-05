@@ -33,6 +33,7 @@ type Effects eff =
 
 privacyPolicyDialog :: forall eff siteLinks userDetails userDetailsLinks
                      . LocalCookingSiteLinks siteLinks userDetailsLinks
+                    => Eq siteLinks
                     => ToLocation siteLinks
                     => LocalCookingParams siteLinks userDetails (Effects eff)
                     -> { privacyPolicyDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)

@@ -62,6 +62,7 @@ type Effects eff =
 
 loginDialog :: forall eff siteLinks userDetails userDetailsLinks
              . LocalCookingSiteLinks siteLinks userDetailsLinks
+            => Eq siteLinks
             => ToLocation siteLinks
             => LocalCookingParams siteLinks userDetails (Effects eff)
             -> { loginDialogQueue           :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)

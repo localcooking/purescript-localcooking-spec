@@ -2,7 +2,7 @@ module LocalCooking.Spec.Drawers.LeftMenu where
 
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks, rootLink)
 import LocalCooking.Thermite.Params
-  (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
+  (LocalCookingParams, LocalCookingStateLight, LocalCookingActionLight, initLocalCookingStateLight, performActionLocalCookingLight, whileMountedLocalCookingLight)
 
 import Prelude
 import Data.Tuple (Tuple (..))
@@ -32,22 +32,22 @@ import MaterialUI.Icons.PersonPin (personPinIcon)
 import Queue.One (READ, Queue)
 
 
-type State siteLinks userDetails =
+type State siteLinks =
   { open :: Boolean
-  , localCooking :: LocalCookingState siteLinks userDetails
+  , localCooking :: LocalCookingStateLight siteLinks
   }
 
-initialState :: forall siteLinks userDetails. LocalCookingState siteLinks userDetails -> State siteLinks userDetails
+initialState :: forall siteLinks. LocalCookingStateLight siteLinks -> State siteLinks
 initialState localCooking =
   { open: false
   , localCooking
   }
 
-data Action siteLinks userDetails
+data Action siteLinks
   = Clicked siteLinks
   | Open
   | Close
-  | LocalCookingAction (LocalCookingAction siteLinks userDetails)
+  | LocalCookingAction (LocalCookingActionLight siteLinks)
 
 
 type Effects eff =
@@ -57,7 +57,7 @@ type Effects eff =
   , now       :: NOW
   | eff)
 
-getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
+getLCState :: forall siteLinks. Lens' (State siteLinks) (LocalCookingStateLight siteLinks)
 getLCState = lens (_.localCooking) (_ { localCooking = _ })
 
 
@@ -69,7 +69,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
                   -> R.ReactElement -- About button
                   -> R.ReactElement
         }
-     -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
+     -> T.Spec (Effects eff) (State siteLinks) Unit (Action siteLinks)
 spec
   params
   { buttons
@@ -101,10 +101,10 @@ spec
                 liftEff (writeRef lastOpen Nothing)
                 void $ T.cotransform _ { open = false }
             | otherwise -> pure unit
-      LocalCookingAction a -> performActionLocalCooking getLCState a props state
+      LocalCookingAction a -> performActionLocalCookingLight getLCState a props state
 
 
-    render :: T.Render (State siteLinks userDetails) Unit (Action siteLinks userDetails)
+    render :: T.Render (State siteLinks) Unit (Action siteLinks)
     render dispatch props state children =
       [ drawer
         { open: state.open
@@ -128,6 +128,7 @@ spec
 
 leftMenu :: forall eff siteLinks userDetailsLinks userDetails
           . LocalCookingSiteLinks siteLinks userDetailsLinks
+         => Eq siteLinks
          => LocalCookingParams siteLinks userDetails (Effects eff)
          -> { mobileDrawerOpenTrigger :: Queue (read :: READ) (Effects eff) Unit
             , buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
@@ -147,9 +148,9 @@ leftMenu
             { buttons
             }
           )
-          (initialState (unsafePerformEff (initLocalCookingState params)))
+          (initialState (unsafePerformEff (initLocalCookingStateLight params)))
       reactSpecLogin =
-          whileMountedLocalCooking
+          whileMountedLocalCookingLight
             params
             "LocalCooking.Drawers.LeftMenu"
             LocalCookingAction

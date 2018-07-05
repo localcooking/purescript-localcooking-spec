@@ -2,7 +2,7 @@ module LocalCooking.Spec.Dialogs.Generic where
 
 import LocalCooking.Spec.Common.Pending (pending)
 import LocalCooking.Spec.Common.Form.Submit as Submit
-import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingAction, LocalCookingState, performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
+import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingActionLight, LocalCookingStateLight, performActionLocalCookingLight, whileMountedLocalCookingLight, initLocalCookingStateLight)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 
 import Prelude
@@ -46,25 +46,25 @@ import IxSignal.Internal as IxSignal
 
 
 
-type State input siteLinks userDetails =
+type State input siteLinks =
   { open         :: Maybe input
-  , localCooking :: LocalCookingState siteLinks userDetails
+  , localCooking :: LocalCookingStateLight siteLinks
   }
 
 
-initialState :: forall input siteLinks userDetails
-              . LocalCookingState siteLinks userDetails -> State input siteLinks userDetails
+initialState :: forall input siteLinks
+              . LocalCookingStateLight siteLinks -> State input siteLinks
 initialState localCooking =
   { open: Nothing
   , localCooking
   }
 
 
-data Action input siteLinks userDetails
+data Action input siteLinks
   = Open input
   | Close
   | Submit
-  | LocalCookingAction (LocalCookingAction siteLinks userDetails)
+  | LocalCookingAction (LocalCookingActionLight siteLinks)
 
 type Effects eff =
   ( ref       :: REF
@@ -75,7 +75,7 @@ type Effects eff =
 
 
 getLCState :: forall input siteLinks userDetails
-            . Lens' (State input siteLinks userDetails) (LocalCookingState siteLinks userDetails)
+            . Lens' (State input siteLinks) (LocalCookingStateLight siteLinks)
 getLCState = lens (_.localCooking) (_ { localCooking = _ })
 
 
@@ -105,7 +105,7 @@ spec :: forall eff siteLinks userDetails userDetailsLinks input output
           }
         , pendingSignal :: Maybe (IxSignal (Effects eff) Boolean)
         }
-     -> T.Spec (Effects eff) (State input siteLinks userDetails) Unit (Action input siteLinks userDetails)
+     -> T.Spec (Effects eff) (State input siteLinks) Unit (Action input siteLinks)
 spec
   {toURI}
   { submit
@@ -144,9 +144,9 @@ spec
                 case closeQueue of
                   Nothing -> performAction Close props state
                   Just closeQueue' -> pure unit
-      LocalCookingAction a -> performActionLocalCooking getLCState a props state
+      LocalCookingAction a -> performActionLocalCookingLight getLCState a props state
 
-    render :: T.Render (State input siteLinks userDetails) Unit (Action input siteLinks userDetails)
+    render :: T.Render (State input siteLinks) Unit (Action input siteLinks)
     render dispatch props state children =
       [ let dialog' =
               if state.localCooking.windowSize < Laptop
@@ -224,6 +224,7 @@ spec
 
 genericDialog :: forall eff siteLinks userDetails userDetailsLinks input output
                . LocalCookingSiteLinks siteLinks userDetailsLinks
+              => Eq siteLinks
               => ToLocation siteLinks
               => LocalCookingParams siteLinks userDetails (Effects eff)
               -> { dialogQueue       :: OneIO.IOQueues (Effects eff) input (Maybe output)
@@ -271,9 +272,9 @@ genericDialog
             , pendingSignal
             , dialogOutputQueue
             } )
-          (initialState (unsafePerformEff (initLocalCookingState params)))
+          (initialState (unsafePerformEff (initLocalCookingStateLight params)))
       reactSpec' =
-          whileMountedLocalCooking
+          whileMountedLocalCookingLight
             params
             "LocalCooking.Spec.Dialogs.Generic"
             LocalCookingAction
