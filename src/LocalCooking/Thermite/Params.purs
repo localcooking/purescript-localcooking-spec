@@ -9,6 +9,7 @@ import Data.URI.Location (Location)
 import Data.Lens (Lens', (%~))
 import Data.UUID (GENUUID)
 import Data.Generic (class Generic, gShow)
+import Data.String.Yarn (unlines)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
@@ -40,6 +41,22 @@ type LocalCookingState siteLinks userDetails =
   , authToken   :: Maybe AuthToken
   , userDetails :: Maybe userDetails
   }
+
+
+showLocalCookingState :: forall siteLinks userDetails
+                       . Show siteLinks
+                      => Show userDetails
+                      => LocalCookingState siteLinks userDetails
+                      -> String
+showLocalCookingState {currentPage,windowSize,authToken,userDetails} =
+  unlines
+  [ "{ currentPage: " <> show currentPage
+  , ", windowSize: " <> show windowSize
+  , ", authToken: " <> show authToken
+  , ", userDetails: " <> show userDetails
+  , "}"
+  ]
+
 
 
 -- | Obtain state from params
