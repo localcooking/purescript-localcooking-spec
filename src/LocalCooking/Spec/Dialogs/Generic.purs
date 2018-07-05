@@ -273,16 +273,6 @@ genericDialog
             , dialogOutputQueue
             } )
           (initialState (unsafePerformEff (initLocalCookingStateLight params)))
-      _ = unsafePerformEff $ do
-            case closeQueue of
-              Nothing -> pure unit
-              Just closeQueue' ->
-                One.onQueue (allowReading closeQueue') $ \_ -> case innerCloseQueue of
-                  Nothing -> pure unit
-                  Just innerCloseQueue' -> do
-                    -- relay to inner close only when mounted - drain otherwise
-                    isMounted <- readRef isMountedRef
-                    when isMounted $ One.putQueue innerCloseQueue' unit
       reactSpec' =
           whileMountedLocalCookingLight
             params
@@ -292,28 +282,20 @@ genericDialog
         $ Queue.whileMountedOne
             dialogInputQueue
             (\this x -> unsafeCoerceEff $ dispatcher this $ Open x)
-        $ ( case innerCloseQueue of
+        $ ( case closeQueue of
               Nothing -> id
-              Just innerCloseQueue' ->
-                Queue.whileMountedOne
-                  innerCloseQueue'
+              Just closeQueue' ->
+                Queue.drainingWhileUnmountedOne
+                  (allowReading closeQueue')
                   (\this _ -> unsafeCoerceEff $ dispatcher this Close)
           )
         $ Queue.whileMountedIx
             submitQueue
             "onSubmit"
             (\this _ -> unsafeCoerceEff $ dispatcher this Submit)
-        $   reactSpec
-            { componentDidMount = \_ -> writeRef isMountedRef true
-            , componentWillUnmount = \_ -> writeRef isMountedRef false
-            }
+            reactSpec
   in  R.createElement (R.createClass reactSpec') unit []
   where
     submitDisabledSignal = unsafePerformEff $ IxSignal.make false
     pendingSignal = if pends then unsafePerformEff (Just <$> IxSignal.make false) else Nothing
     submitQueue = unsafePerformEff $ readOnly <$> IxQueue.newIxQueue
-    -- replicate close queue, to drain when not mounted
-    innerCloseQueue = unsafePerformEff $ case closeQueue of
-      Nothing -> pure Nothing
-      Just _ -> Just <$> One.newQueue
-    isMountedRef = unsafePerformEff $ newRef false

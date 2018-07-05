@@ -390,6 +390,7 @@ security
               --     unsafeCoerceEff $ onAvailable
               --       getUserData
               --       params.authTokenSignal
+              --     reactSpec.componentDidMount this
               -- }
   in  R.createElement (R.createClass reactSpec') unit []
   where
