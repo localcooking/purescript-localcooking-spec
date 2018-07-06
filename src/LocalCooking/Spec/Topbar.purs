@@ -17,6 +17,7 @@ import Data.Lens (Lens', lens)
 import Text.Email.Validate as Email
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff, unsafePerformEff)
 import Control.Monad.Eff.Ref (REF)
@@ -61,6 +62,7 @@ type Effects eff =
   ( ref       :: REF
   , uuid      :: GENUUID
   , exception :: EXCEPTION
+  , console   :: CONSOLE
   | eff)
 
 getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
@@ -94,6 +96,7 @@ spec
     performAction action props state = case action of
       AttemptLogin -> do
         mLogin <- liftBase (OneIO.callAsync loginDialogQueue unit)
+        liftEff $ log $ "Got login data from dialog: " <> show mLogin
         case mLogin of
           Nothing -> pure unit
           Just login -> liftEff $ authTokenInitIn $ AuthTokenInitInLogin login

@@ -28,6 +28,7 @@ import Data.Lens (Lens', lens)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 import Control.Monad.Eff.Ref (REF)
+import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Now (NOW)
 import Control.Monad.Eff.Timer (TIMER)
@@ -71,6 +72,7 @@ type Effects eff =
   , timer      :: TIMER
   , webStorage :: WEB_STORAGE
   , scrypt     :: SCRYPT
+  , console    :: CONSOLE
   | eff)
 
 -- getLCState :: forall siteLinks. Lens' (State siteLinks) (LocalCookingStateLight siteLinks)
