@@ -179,19 +179,19 @@ whileMountedLocalCooking
   buildLCAction
   dispatcher
   reactSpec
-  = Signal.whileMountedIxDiff
+  = Signal.whileMountedIx
       currentPageSignal
       k
       (\this x -> dispatcher this (buildLCAction (ChangedCurrentPage x)))
-  $ Signal.whileMountedIxDiff
+  $ Signal.whileMountedIx
       windowSizeSignal
       k
       (\this x -> dispatcher this (buildLCAction (ChangedWindowSize x)))
-  $ Signal.whileMountedIxDiff
+  $ Signal.whileMountedIx
       authTokenSignal
       k
       (\this x -> dispatcher this (buildLCAction (ChangedAuthToken x)))
-  $ Signal.whileMountedIxDiff
+  $ Signal.whileMountedIx
       userDetailsSignal
       k
       (\this x -> dispatcher this (buildLCAction (ChangedUserDetails x)))
@@ -214,11 +214,11 @@ whileMountedLocalCookingLight
   buildLCAction
   dispatcher
   reactSpec
-  = Signal.whileMountedIxDiff
+  = Signal.whileMountedIx
       currentPageSignal
       k
       (\this x -> dispatcher this (buildLCAction (ChangedCurrentPageLight x)))
-  $ Signal.whileMountedIxDiff
+  $ Signal.whileMountedIx
       windowSizeSignal
       k
       (\this x -> dispatcher this (buildLCAction (ChangedWindowSizeLight x)))

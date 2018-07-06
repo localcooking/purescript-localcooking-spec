@@ -12,8 +12,8 @@ import LocalCooking.Spec.Dialogs (AllDialogs, dialogs)
 import LocalCooking.Spec.Snackbar (messages)
 import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
 import LocalCooking.Thermite.Params
-  ( LocalCookingParams, LocalCookingState, LocalCookingAction
-  , performActionLocalCooking, whileMountedLocalCooking, initLocalCookingState)
+  ( LocalCookingParams, LocalCookingStateLight, LocalCookingActionLight
+  , performActionLocalCookingLight, whileMountedLocalCookingLight, initLocalCookingStateLight)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Dependencies.Common (UserInitIn, UserDeltaIn)
@@ -48,15 +48,15 @@ import Queue.One.Aff as OneIO
 
 
 
-type State siteLinks userDetails = LocalCookingState siteLinks userDetails
+type State siteLinks = LocalCookingStateLight siteLinks
 
 
-initialState :: forall siteLinks userDetails
-              . LocalCookingState siteLinks userDetails -> State siteLinks userDetails
+initialState :: forall siteLinks
+              . LocalCookingStateLight siteLinks -> State siteLinks
 initialState = id
 
 
-type Action siteLinks userDetails = LocalCookingAction siteLinks userDetails
+type Action siteLinks = LocalCookingActionLight siteLinks
 
 
 type Effects eff =
@@ -70,7 +70,7 @@ type Effects eff =
   , scrypt     :: SCRYPT
   | eff)
 
-getLCState :: forall siteLinks userDetails. Lens' (State siteLinks userDetails) (LocalCookingState siteLinks userDetails)
+getLCState :: forall siteLinks. Lens' (State siteLinks) (LocalCookingStateLight siteLinks)
 getLCState = lens id (\_ x -> x)
 
 
@@ -122,7 +122,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
         , templateArgs :: TemplateArgs (Effects eff) siteLinks userDetails
         -- FIXME rename? How could these args be described as spec arguments?
         }
-     -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
+     -> T.Spec (Effects eff) (State siteLinks) Unit (Action siteLinks)
 spec
   params
   { env
@@ -136,9 +136,9 @@ spec
   , templateArgs
   } = T.simpleSpec performAction render
   where
-    performAction = performActionLocalCooking getLCState
+    performAction = performActionLocalCookingLight getLCState
 
-    render :: T.Render (State siteLinks userDetails) Unit (Action siteLinks userDetails)
+    render :: T.Render (State siteLinks) Unit (Action siteLinks)
     render dispatch props state children = template $
       [ topbar
         params
@@ -228,8 +228,8 @@ app :: forall eff siteLinks userDetailsLinks userDetails
        , userDeltaIn      :: UserDeltaIn -> Eff (Effects eff) Unit
        , templateArgs     :: TemplateArgs (Effects eff) siteLinks userDetails
        }
-    -> { spec :: R.ReactSpec Unit (State siteLinks userDetails) (Array R.ReactElement) (Effects eff)
-       , dispatcher :: R.ReactThis Unit (State siteLinks userDetails) -> (Action siteLinks userDetails) -> T.EventHandler
+    -> { spec :: R.ReactSpec Unit (State siteLinks) (Array R.ReactElement) (Effects eff)
+       , dispatcher :: R.ReactThis Unit (State siteLinks) -> (Action siteLinks) -> T.EventHandler
        }
 app
   params
@@ -268,9 +268,9 @@ app
             }
           , templateArgs
           }
-        ) (initialState (unsafePerformEff (initLocalCookingState params)))
+        ) (initialState (unsafePerformEff (initLocalCookingStateLight params)))
       reactSpec' =
-          whileMountedLocalCooking
+          whileMountedLocalCookingLight
             params
             "LocalCooking.Spec"
             id
