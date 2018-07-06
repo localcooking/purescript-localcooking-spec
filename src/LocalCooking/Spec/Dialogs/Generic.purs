@@ -53,14 +53,6 @@ type State input siteLinks =
   }
 
 
-initialState :: forall input siteLinks
-              . LocalCookingStateLight siteLinks -> State input siteLinks
-initialState localCooking =
-  { open: Nothing
-  , localCooking
-  }
-
-
 data Action input siteLinks
   = Open input
   | Close
@@ -302,7 +294,13 @@ genericDialog
             , closeQueue
             , dialogSignal
             } )
-          (initialState (unsafePerformEff (initLocalCookingStateLight params)))
+          ( unsafePerformEff do
+              localCooking <- initLocalCookingStateLight params
+              open <- case dialogSignal of
+                Nothing -> pure Nothing
+                Just dialogSignal' -> IxSignal.get dialogSignal'
+              pure {localCooking, open}
+          )
       reactSpec' =
           whileMountedLocalCookingLight
             params
