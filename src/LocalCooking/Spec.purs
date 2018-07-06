@@ -48,15 +48,18 @@ import Queue.One.Aff as OneIO
 
 
 
-type State siteLinks = LocalCookingStateLight siteLinks
+-- type State siteLinks = LocalCookingStateLight siteLinks
+type State = Unit
 
 
-initialState :: forall siteLinks
-              . LocalCookingStateLight siteLinks -> State siteLinks
-initialState = id
+-- initialState :: forall siteLinks
+--               . LocalCookingStateLight siteLinks -> State siteLinks
+-- initialState = id
+initialState = unit
 
 
-type Action siteLinks = LocalCookingActionLight siteLinks
+-- type Action siteLinks = LocalCookingActionLight siteLinks
+type Action = Unit
 
 
 type Effects eff =
@@ -70,8 +73,8 @@ type Effects eff =
   , scrypt     :: SCRYPT
   | eff)
 
-getLCState :: forall siteLinks. Lens' (State siteLinks) (LocalCookingStateLight siteLinks)
-getLCState = lens id (\_ x -> x)
+-- getLCState :: forall siteLinks. Lens' (State siteLinks) (LocalCookingStateLight siteLinks)
+-- getLCState = lens id (\_ x -> x)
 
 
 type TemplateArgs eff siteLinks userDetails =
@@ -122,7 +125,8 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
         , templateArgs :: TemplateArgs (Effects eff) siteLinks userDetails
         -- FIXME rename? How could these args be described as spec arguments?
         }
-     -> T.Spec (Effects eff) (State siteLinks) Unit (Action siteLinks)
+     -- -> T.Spec (Effects eff) (State siteLinks) Unit (Action siteLinks)
+     -> T.Spec (Effects eff) State Unit Action
 spec
   params
   { env
@@ -136,9 +140,11 @@ spec
   , templateArgs
   } = T.simpleSpec performAction render
   where
-    performAction = performActionLocalCookingLight getLCState
+    -- performAction = performActionLocalCookingLight getLCState
+    performAction _ _ _ = pure unit
 
-    render :: T.Render (State siteLinks) Unit (Action siteLinks)
+    -- render :: T.Render (State siteLinks) Unit (Action siteLinks)
+    render :: T.Render State Unit Action
     render dispatch props state children = template $
       [ topbar
         params
@@ -228,8 +234,11 @@ app :: forall eff siteLinks userDetailsLinks userDetails
        , userDeltaIn      :: UserDeltaIn -> Eff (Effects eff) Unit
        , templateArgs     :: TemplateArgs (Effects eff) siteLinks userDetails
        }
-    -> { spec :: R.ReactSpec Unit (State siteLinks) (Array R.ReactElement) (Effects eff)
-       , dispatcher :: R.ReactThis Unit (State siteLinks) -> (Action siteLinks) -> T.EventHandler
+    -- -> { spec :: R.ReactSpec Unit (State siteLinks) (Array R.ReactElement) (Effects eff)
+    --    , dispatcher :: R.ReactThis Unit (State siteLinks) -> (Action siteLinks) -> T.EventHandler
+    --    }
+    -> { spec :: R.ReactSpec Unit State (Array R.ReactElement) (Effects eff)
+       , dispatcher :: R.ReactThis Unit State -> Action -> T.EventHandler
        }
 app
   params
@@ -268,13 +277,13 @@ app
             }
           , templateArgs
           }
-        ) (initialState (unsafePerformEff (initLocalCookingStateLight params)))
+        ) initialState -- (initialState (unsafePerformEff (initLocalCookingStateLight params)))
       reactSpec' =
-          whileMountedLocalCookingLight
-            params
-            "LocalCooking.Spec"
-            id
-            (\this -> unsafeCoerceEff <<< dispatcher this)
+          -- whileMountedLocalCookingLight
+          --   params
+          --   "LocalCooking.Spec"
+          --   id
+          --   (\this -> unsafeCoerceEff <<< dispatcher this)
             reactSpec
 
   in  {spec: reactSpec', dispatcher}
