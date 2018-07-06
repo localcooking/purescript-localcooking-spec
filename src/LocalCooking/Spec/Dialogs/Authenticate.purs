@@ -67,6 +67,7 @@ authenticateDialog
   params
   { dialogQueue: authenticateDialogQueue
   , closeQueue: Nothing
+  , dialogSignal: Nothing
   , buttons: \_ -> []
   , title: \_ -> "Authenticate"
   , submitValue: Just "Submit"

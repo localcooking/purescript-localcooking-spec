@@ -13,7 +13,7 @@
     "purescript-react": "^5.1.0",
     "purescript-webstorage": "^4.0.0",
     "purescript-thermite": "git://github.com/jvliwanag/purescript-thermite.git#94299d6832d92f14bef029f35d07bd5e8b062e05",
-    "purescript-react-queue": "^0.0.7",
+    "purescript-react-queue": "^0.0.8",
     "purescript-console": "^3.0.0",
     "purescript-parseint": "^0.0.0"
   },

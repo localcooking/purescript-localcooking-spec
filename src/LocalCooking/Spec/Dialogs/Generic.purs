@@ -24,6 +24,7 @@ import Thermite as T
 import React (ReactElement, createClass, createElement) as R
 import React.DOM (text) as R
 import React.Queue.WhileMounted as Queue
+import React.Signal.WhileMounted as Signal
 import DOM (DOM)
 import DOM.HTML.Window.Extra (WindowSize (..))
 
@@ -82,9 +83,11 @@ getLCState = lens (_.localCooking) (_ { localCooking = _ })
 spec :: forall eff siteLinks userDetails userDetailsLinks input output
       . LocalCookingSiteLinks siteLinks userDetailsLinks
      => ToLocation siteLinks
+     => Eq input
      => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { dialogOutputQueue :: One.Queue (write :: WRITE) (Effects eff) (Maybe output)
         , closeQueue :: Maybe (One.Queue (write :: WRITE) (Effects eff) Unit)
+        , dialogSignal :: Maybe (IxSignal (Effects eff) (Maybe input))
         , content ::
           { component ::
             { submitDisabled :: Boolean -> Eff (Effects eff) Unit
@@ -113,17 +116,25 @@ spec
   , pendingSignal
   , dialogOutputQueue
   , closeQueue
+  , dialogSignal
   , buttons
   , title
   } = T.simpleSpec performAction render
   where
     performAction action props state = case action of
-      Open x -> void $ T.cotransform _ { open = Just x }
+      Open x -> do
+        case dialogSignal of
+          Nothing -> pure unit
+          Just dialogSignal' -> liftEff (IxSignal.setDiff (Just x) dialogSignal')
+        void $ T.cotransform _ { open = Just x }
       Close -> do
         case pendingSignal of
           Nothing -> pure unit
           Just p  -> liftEff (IxSignal.set false p)
         void $ T.cotransform _ { open = Nothing }
+        case dialogSignal of
+          Nothing -> pure unit
+          Just dialogSignal' -> liftEff (IxSignal.setDiff Nothing dialogSignal')
         liftBase $ delay $ Milliseconds 2000.0
         liftEff content.reset
       Submit -> do
@@ -139,8 +150,10 @@ spec
                 case pendingSignal of
                   Nothing -> pure unit
                   Just p -> liftEff (IxSignal.set false p)
+                  -- TODO signal some kind of error in the dialog - didn't close or return
               Just output -> do
                 liftEff (One.putQueue dialogOutputQueue (Just output))
+                -- explicit ownership of visual closing trigger
                 case closeQueue of
                   Nothing -> performAction Close props state
                   Just closeQueue' -> pure unit
@@ -225,10 +238,16 @@ spec
 genericDialog :: forall eff siteLinks userDetails userDetailsLinks input output
                . LocalCookingSiteLinks siteLinks userDetailsLinks
               => Eq siteLinks
+              => Eq input
               => ToLocation siteLinks
               => LocalCookingParams siteLinks userDetails (Effects eff)
               -> { dialogQueue       :: OneIO.IOQueues (Effects eff) input (Maybe output)
                  , closeQueue        :: Maybe (One.Queue (write :: WRITE) (Effects eff) Unit)
+                   -- ^ When present, triggers to this will cause a visual close,
+                   -- but moreover, submissions /won't/ close until this is triggered.
+                 , dialogSignal      :: Maybe (IxSignal (Effects eff) (Maybe input))
+                   -- ^ When present, setting to Nothing will cause a visual close,
+                   -- while setting to Just input will cause a visual open.
                  , buttons           ::
                     { close :: Eff (Effects eff) Unit
                     , input :: input
@@ -250,6 +269,7 @@ genericDialog
   params
   { dialogQueue: OneIO.IOQueues {input: dialogInputQueue, output: dialogOutputQueue}
   , closeQueue
+  , dialogSignal
   , content
   , submitValue
   , buttons
@@ -260,8 +280,7 @@ genericDialog
         T.createReactSpec
           ( spec
             params
-            { closeQueue
-            , buttons
+            { buttons
             , title
             , submit:
               { queue: submitQueue
@@ -271,6 +290,8 @@ genericDialog
             , content
             , pendingSignal
             , dialogOutputQueue
+            , closeQueue
+            , dialogSignal
             } )
           (initialState (unsafePerformEff (initLocalCookingStateLight params)))
       reactSpec' =
@@ -288,6 +309,16 @@ genericDialog
                 Queue.drainingWhileUnmountedOne
                   (allowReading closeQueue')
                   (\this _ -> unsafeCoerceEff $ dispatcher this Close)
+          )
+        $ ( case dialogSignal of
+              Nothing -> id
+              Just dialogSignal' ->
+                Signal.whileMountedIxDiff
+                  dialogSignal'
+                  "dialogMount"
+                  (\this mInput -> unsafeCoerceEff $ case mInput of
+                      Nothing -> dispatcher this Close
+                      Just input -> dispatcher this (Open input))
           )
         $ Queue.whileMountedIx
             submitQueue

@@ -84,6 +84,7 @@ loginDialog
   params
   { dialogQueue: loginDialogQueue
   , closeQueue: Just loginCloseQueue
+  , dialogSignal: Nothing
   , buttons: \{close} ->
     [ button
       { color: Button.secondary

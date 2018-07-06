@@ -47,6 +47,7 @@ privacyPolicyDialog
   params
   { dialogQueue: privacyPolicyDialogQueue
   , closeQueue: Nothing
+  , dialogSignal: Nothing
   , buttons: \_ -> []
   , title: \_ -> "Privacy Policy"
   , submitValue: Just "Acknowledge"
