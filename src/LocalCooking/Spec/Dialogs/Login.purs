@@ -99,6 +99,7 @@ loginDialog
     ]
   , title: \_ -> "Login"
   , submitValue: Just "Submit"
+  , extraOnClose: pure unit
   , pends: true
   , content:
     { component: \{submitDisabled} ->

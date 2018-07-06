@@ -69,6 +69,7 @@ authenticateDialog
   , closeQueue: Nothing
   , dialogSignal: Nothing
   , buttons: \_ -> []
+  , extraOnClose: pure unit
   , title: \_ -> "Authenticate"
   , submitValue: Just "Submit"
   , pends: true

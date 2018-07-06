@@ -101,6 +101,7 @@ spec :: forall eff siteLinks userDetails userDetailsLinks input output
           , input :: input
           } -> Array R.ReactElement
         , title :: input -> String
+        , extraOnClose :: Eff (Effects eff) Unit
         , submit ::
           { disabledSignal :: IxSignal (Effects eff) Boolean
           , queue          :: IxQueue (read :: READ) (Effects eff) Unit
@@ -118,6 +119,7 @@ spec
   , closeQueue
   , dialogSignal
   , buttons
+  , extraOnClose
   , title
   } = T.simpleSpec performAction render
   where
@@ -182,7 +184,9 @@ spec
                           Nothing -> pure false
                           Just p  -> unsafeCoerceEff (IxSignal.get p)
                       when (not pending) $ do
-                        unsafeCoerceEff (One.putQueue dialogOutputQueue Nothing)
+                        unsafeCoerceEff $ do
+                          One.putQueue dialogOutputQueue Nothing
+                          extraOnClose
                         dispatch Close
                   }
         in  dialog' $ case state.open of
@@ -212,7 +216,9 @@ spec
                     ( let cancelButton = button
                             { color: Button.default
                             , onTouchTap: mkEffFn1 \_ -> do
-                                unsafeCoerceEff (One.putQueue dialogOutputQueue Nothing)
+                                unsafeCoerceEff $ do
+                                  One.putQueue dialogOutputQueue Nothing
+                                  extraOnClose
                                 dispatch Close
                             } [R.text "Cancel"]
                       in  case submit.value of
@@ -255,6 +261,7 @@ genericDialog :: forall eff siteLinks userDetails userDetailsLinks input output
                  , title             :: input -> String
                  , submitValue       :: Maybe String
                  , pends             :: Boolean
+                 , extraOnClose      :: Eff (Effects eff) Unit
                  , content ::
                    { component ::
                      { submitDisabled :: Boolean -> Eff (Effects eff) Unit
@@ -274,6 +281,7 @@ genericDialog
   , submitValue
   , buttons
   , title
+  , extraOnClose
   , pends
   } =
   let {spec: reactSpec, dispatcher} =
@@ -282,6 +290,7 @@ genericDialog
             params
             { buttons
             , title
+            , extraOnClose
             , submit:
               { queue: submitQueue
               , disabledSignal: submitDisabledSignal

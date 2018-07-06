@@ -50,6 +50,7 @@ privacyPolicyDialog
   , dialogSignal: Nothing
   , buttons: \_ -> []
   , title: \_ -> "Privacy Policy"
+  , extraOnClose: pure unit
   , submitValue: Just "Acknowledge"
   , pends: false
   , content:
