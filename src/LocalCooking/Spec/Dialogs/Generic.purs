@@ -125,10 +125,10 @@ spec
         case pendingSignal of
           Nothing -> pure unit
           Just p  -> liftEff (IxSignal.set false p)
-        void $ T.cotransform _ { open = Nothing }
         case dialogSignal of
           Nothing -> pure unit
           Just dialogSignal' -> liftEff (IxSignal.setDiff Nothing dialogSignal')
+        void $ T.cotransform _ { open = Nothing }
         liftBase $ delay $ Milliseconds 2000.0
         liftEff content.reset
       Submit -> do
