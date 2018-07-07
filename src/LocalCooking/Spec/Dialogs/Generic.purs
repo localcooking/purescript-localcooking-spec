@@ -119,7 +119,7 @@ spec
       Open x -> do
         case dialogSignal of
           Nothing -> pure unit
-          Just dialogSignal' -> liftEff (IxSignal.setDiff (Just x) dialogSignal')
+          Just dialogSignal' -> liftEff (IxSignal.setExceptDiff ["dialogMount"] (Just x) dialogSignal')
         void $ T.cotransform _ { open = Just x }
       Close -> do
         case pendingSignal of
@@ -127,7 +127,7 @@ spec
           Just p  -> liftEff (IxSignal.set false p)
         case dialogSignal of
           Nothing -> pure unit
-          Just dialogSignal' -> liftEff (IxSignal.setDiff Nothing dialogSignal')
+          Just dialogSignal' -> liftEff (IxSignal.setExceptDiff ["dialogMount"] Nothing dialogSignal')
         void $ T.cotransform _ { open = Nothing }
         liftBase $ delay $ Milliseconds 2000.0
         liftEff content.reset
