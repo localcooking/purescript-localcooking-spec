@@ -56,6 +56,7 @@ type State = Unit
 -- initialState :: forall siteLinks
 --               . LocalCookingStateLight siteLinks -> State siteLinks
 -- initialState = id
+initialState :: State
 initialState = unit
 
 

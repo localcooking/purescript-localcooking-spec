@@ -12,7 +12,7 @@ import LocalCooking.Global.User.Class (class UserDetails, getUser)
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.Common (UserDeltaIn (UserDeltaInSetUser))
-import LocalCooking.Semantics.Common (User (..), SetUser (..), SocialLoginForm)
+import LocalCooking.Semantics.Common (User (..), SetUser (..), SocialLoginForm, ChangePassword (..))
 import Facebook.State (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataSecurity))
 
 import Prelude
@@ -155,32 +155,43 @@ spec
       SubmitSecurity -> do
         liftEff $ IxSignal.set true pendingSignal
         authToken <- liftBase $ getAvailable params.authTokenSignal
-        let whenEmailGood mX = case mX of
-              Email.EmailGood x -> Just x
-              _ -> Nothing
-        email <- liftBase $ getWhen whenEmailGood email.signal
-        mAuthPass <- liftBase $ OneIO.callAsync authenticateDialogQueue unit
-        case mAuthPass of
+        mEmail <- do
+          mX <- liftEff $ IxSignal.get email.signal
+          pure $ case mX of
+            Email.EmailGood x -> Just x
+            _ -> Nothing
+        mChangePass <- do
+          passwordString <- liftEff (IxSignal.get password.signal)
+          if passwordString == ""
+            then pure Nothing
+            else do
+              mAuthPass <- liftBase $ OneIO.callAsync authenticateDialogQueue unit
+              case mAuthPass of
+                Nothing -> pure Nothing
+                Just oldPassword -> do
+                  newPassword <- liftBase $ hashPassword
+                    { password: passwordString
+                    , salt: env.salt
+                    }
+                  pure $ Just $ ChangePassword {oldPassword, newPassword}
+        -- FIXME assigning new password is a restricted credential set
+        case state.user of
           Nothing -> pure unit
-          Just oldPassword -> do
-            passwordString <- liftEff (IxSignal.get password.signal)
-            newPassword <- liftBase $ hashPassword
-              { password: passwordString
-              , salt: env.salt
+          Just (User {id,socialLogin}) ->
+            liftEff $ userDeltaIn
+                    $ UserDeltaInSetUser
+                    $ SetUser
+              { id
+              , email: mEmail
+              , socialLogin: Just socialLogin
+              , changePassword: mChangePass
               }
-            -- FIXME assigning new password is a restricted credential set
-            case state.user of
-              Nothing -> pure unit
-              Just (User {id,socialLogin}) ->
-                liftEff $ userDeltaIn
-                        $ UserDeltaInSetUser
-                        $ SetUser {id,email,socialLogin,oldPassword,newPassword}
-            liftEff $ do
-              -- One.putQueue globalErrorQueue $ case mErr of
-              --   Nothing -> GlobalErrorSecurity SecuritySaveFailed
-              --   Just JSONUnit -> GlobalErrorSecurity SecuritySaveSuccess
-              -- FIXME threaded...?
-              IxSignal.set false pendingSignal
+        liftEff $ do
+          -- One.putQueue globalErrorQueue $ case mErr of
+          --   Nothing -> GlobalErrorSecurity SecuritySaveFailed
+          --   Just JSONUnit -> GlobalErrorSecurity SecuritySaveSuccess
+          -- FIXME threaded...?
+          IxSignal.set false pendingSignal
 
     render :: T.Render (State siteLinks userDetails) Unit (Action siteLinks userDetails)
     render dispatch props state children =

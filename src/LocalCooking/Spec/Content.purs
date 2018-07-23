@@ -263,7 +263,7 @@ spec
         { variant: Typography.caption
         , align: Typography.center
         }
-        [ R.text "Proudly made in Golden, Colorado, The United States of America."
+        [ R.text "Proudly made in Golden & Boulder, Colorado, The United States of America."
         ]
       , R.div [RP.style {textAlign: "center", marginTop: "1em"}]
         [ RS.svg
