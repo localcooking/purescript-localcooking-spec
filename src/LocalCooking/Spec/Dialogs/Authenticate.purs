@@ -7,7 +7,6 @@ import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorAuthFailure), AuthTokenFailure (AuthLoginFailure))
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
-import LocalCooking.Dependencies.AccessToken.Generic (AccessInitIn (..))
 import LocalCooking.Dependencies.Validate (PasswordVerifySparrowClientQueues)
 
 import Prelude
@@ -15,6 +14,7 @@ import Data.Maybe (Maybe (..))
 import Data.UUID (genUUID, GENUUID)
 import Data.URI.Location (class ToLocation)
 import Data.Argonaut.JSONUnit (JSONUnit (..))
+import Data.Argonaut.JSONTuple (JSONTuple (..))
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Control.Monad.Eff.Ref (REF)
@@ -102,7 +102,7 @@ authenticateDialog
           hashedPassword <- liftBase (hashPassword {salt: env.salt, password: pw})
           mVerify <- OneIO.callAsync
             passwordVerifyQueues
-            (AccessInitIn {token: authToken, subj: hashedPassword})
+            (JSONTuple authToken hashedPassword)
           case mVerify of
             Just JSONUnit -> do
               pure (Just hashedPassword)
