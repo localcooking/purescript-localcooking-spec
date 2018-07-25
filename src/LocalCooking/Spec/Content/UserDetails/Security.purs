@@ -43,7 +43,7 @@ import Crypto.Scrypt (SCRYPT)
 
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
-import IxSignal.Extra (getAvailable, getWhen)
+import IxSignal.Extra (getAvailable)
 import Queue.Types (readOnly, writeOnly, allowReading)
 import Queue (WRITE, READ)
 import Queue.One as One

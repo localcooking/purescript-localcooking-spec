@@ -11,9 +11,7 @@ import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Dialogs (AllDialogs, dialogs)
 import LocalCooking.Spec.Snackbar (messages)
 import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
-import LocalCooking.Thermite.Params
-  ( LocalCookingParams, LocalCookingStateLight, LocalCookingActionLight
-  , performActionLocalCookingLight, whileMountedLocalCookingLight, initLocalCookingStateLight)
+import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Dependencies.Common (UserInitIn, UserDeltaIn)
@@ -24,9 +22,8 @@ import Prelude
 import Data.URI.Location (Location, class ToLocation)
 import Data.UUID (GENUUID)
 import Data.Maybe (Maybe)
-import Data.Lens (Lens', lens)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
+import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
@@ -49,18 +46,13 @@ import Queue.One.Aff as OneIO
 
 
 
--- type State siteLinks = LocalCookingStateLight siteLinks
 type State = Unit
 
 
--- initialState :: forall siteLinks
---               . LocalCookingStateLight siteLinks -> State siteLinks
--- initialState = id
 initialState :: State
 initialState = unit
 
 
--- type Action siteLinks = LocalCookingActionLight siteLinks
 type Action = Unit
 
 
@@ -76,8 +68,6 @@ type Effects eff =
   , console    :: CONSOLE
   | eff)
 
--- getLCState :: forall siteLinks. Lens' (State siteLinks) (LocalCookingStateLight siteLinks)
--- getLCState = lens id (\_ x -> x)
 
 
 type TemplateArgs eff siteLinks userDetails =
@@ -128,7 +118,6 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
         , templateArgs :: TemplateArgs (Effects eff) siteLinks userDetails
         -- FIXME rename? How could these args be described as spec arguments?
         }
-     -- -> T.Spec (Effects eff) (State siteLinks) Unit (Action siteLinks)
      -> T.Spec (Effects eff) State Unit Action
 spec
   params
@@ -143,10 +132,8 @@ spec
   , templateArgs
   } = T.simpleSpec performAction render
   where
-    -- performAction = performActionLocalCookingLight getLCState
     performAction _ _ _ = pure unit
 
-    -- render :: T.Render (State siteLinks) Unit (Action siteLinks)
     render :: T.Render State Unit Action
     render dispatch props state children = template $
       [ topbar
@@ -237,9 +224,6 @@ app :: forall eff siteLinks userDetailsLinks userDetails
        , userDeltaIn      :: UserDeltaIn -> Eff (Effects eff) Unit
        , templateArgs     :: TemplateArgs (Effects eff) siteLinks userDetails
        }
-    -- -> { spec :: R.ReactSpec Unit (State siteLinks) (Array R.ReactElement) (Effects eff)
-    --    , dispatcher :: R.ReactThis Unit (State siteLinks) -> (Action siteLinks) -> T.EventHandler
-    --    }
     -> { spec :: R.ReactSpec Unit State (Array R.ReactElement) (Effects eff)
        , dispatcher :: R.ReactThis Unit State -> Action -> T.EventHandler
        }
@@ -280,16 +264,9 @@ app
             }
           , templateArgs
           }
-        ) initialState -- (initialState (unsafePerformEff (initLocalCookingStateLight params)))
-      reactSpec' =
-          -- whileMountedLocalCookingLight
-          --   params
-          --   "LocalCooking.Spec"
-          --   id
-          --   (\this -> unsafeCoerceEff <<< dispatcher this)
-            reactSpec
+        ) initialState
 
-  in  {spec: reactSpec', dispatcher}
+  in  {spec: reactSpec, dispatcher}
   where
     -- FIXME dialog queues - would there be any spawned by a dep's async incoming?
     loginDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)

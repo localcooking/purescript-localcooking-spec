@@ -16,7 +16,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Aff (Aff, delay)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff, unsafePerformEff)
-import Control.Monad.Eff.Ref (REF, newRef, writeRef, readRef)
+import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Eff.Class (liftEff)
 

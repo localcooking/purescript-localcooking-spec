@@ -5,7 +5,6 @@ import LocalCooking.Common.Blog (BlogPostCategory (..))
 import Prelude
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafePerformEff, unsafeCoerceEff)
 
