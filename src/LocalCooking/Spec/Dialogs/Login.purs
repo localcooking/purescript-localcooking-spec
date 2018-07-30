@@ -7,9 +7,13 @@ import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Misc.Social (mkSocialFab)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error
-  ( GlobalError (GlobalErrorAuthFailure)
-  , AuthTokenFailure (AuthLoginFailure))
-import LocalCooking.Dependencies.Validate (PasswordVerifyUnauthSparrowClientQueues, PasswordVerifyUnauth (..))
+  ( GlobalError (GlobalErrorAuthFailure, GlobalErrorCode)
+  , AuthTokenFailure (AuthLoginFailure, AuthTokenInternalError)
+  , ErrorCode (UserUserDoesntExist)
+  )
+import LocalCooking.Dependencies.Validate (PasswordVerifyUnauthSparrowClientQueues)
+import LocalCooking.Semantics.Validate (PasswordVerifyUnauth (..))
+import LocalCooking.Semantics.User (UserExists (..))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Global.Links.Class (registerLink, class LocalCookingSiteLinks)
 import LocalCooking.Common.User.Password (hashPassword)
@@ -22,7 +26,6 @@ import Data.Maybe (Maybe (..))
 import Data.URI.URI (print) as URI
 import Data.URI.Location (class ToLocation, toLocation)
 import Data.UUID (genUUID, GENUUID)
-import Data.Argonaut.JSONUnit (JSONUnit (..))
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff.Uncurried (mkEffFn1)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff, unsafePerformEff)
@@ -159,11 +162,20 @@ loginDialog
             passwordVerifyUnauthQueues
             (PasswordVerifyUnauth {email,password: hashedPassword})
           case mVerify of
-            Just JSONUnit -> do
-              pure $ Just $ Login {email,password: hashedPassword}
+            Just mExists -> liftEff $ case mExists of
+              UserDoesntExist -> do
+                One.putQueue globalErrorQueue (GlobalErrorCode UserUserDoesntExist)
+                pure Nothing
+              UserExists isCorrect ->
+                if isCorrect
+                  then pure $ Just $ Login {email,password: hashedPassword}
+                  else do
+                    One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthLoginFailure)
+                    One.putQueue passwordErrorQueue unit
+                    pure Nothing
             Nothing -> do
               liftEff $ do
-                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthLoginFailure)
+                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthTokenInternalError)
                 One.putQueue passwordErrorQueue unit
               pure Nothing
         _ -> do

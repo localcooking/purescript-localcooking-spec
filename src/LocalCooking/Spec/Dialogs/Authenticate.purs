@@ -4,16 +4,19 @@ import LocalCooking.Spec.Dialogs.Generic (genericDialog)
 import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
-import LocalCooking.Global.Error (GlobalError (GlobalErrorAuthFailure), AuthTokenFailure (AuthLoginFailure))
+import LocalCooking.Global.Error
+  ( GlobalError (GlobalErrorAuthFailure, GlobalErrorCode)
+  , AuthTokenFailure (AuthLoginFailure, AuthTokenInternalError)
+  , ErrorCode (UserUserDoesntExist))
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.Validate (PasswordVerifySparrowClientQueues)
+import LocalCooking.Semantics.User (UserExists (..))
 
 import Prelude
 import Data.Maybe (Maybe (..))
 import Data.UUID (genUUID, GENUUID)
 import Data.URI.Location (class ToLocation)
-import Data.Argonaut.JSONUnit (JSONUnit (..))
 import Data.Argonaut.JSONTuple (JSONTuple (..))
 import Control.Monad.Base (liftBase)
 import Control.Monad.Eff.Unsafe (unsafePerformEff)
@@ -104,11 +107,20 @@ authenticateDialog
             passwordVerifyQueues
             (JSONTuple authToken hashedPassword)
           case mVerify of
-            Just JSONUnit -> do
-              pure (Just hashedPassword)
+            Just mExists -> liftEff $ case mExists of
+              UserDoesntExist -> do
+                One.putQueue globalErrorQueue (GlobalErrorCode UserUserDoesntExist)
+                pure Nothing
+              UserExists isCorrect ->
+                if isCorrect
+                  then pure (Just hashedPassword)
+                  else do
+                    One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthLoginFailure)
+                    One.putQueue passwordErrorQueue unit
+                    pure Nothing
             Nothing -> do
               liftEff $ do
-                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthLoginFailure)
+                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthTokenInternalError)
                 One.putQueue passwordErrorQueue unit
               pure Nothing
     , reset: do
