@@ -1,5 +1,6 @@
 module LocalCooking.Thermite.Params where
 
+import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Common.AccessToken.Auth (AuthToken)
 
 import Prelude
@@ -13,6 +14,8 @@ import Data.String.Yarn (unlines)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
+import Queue.Types (WRITE)
+import Queue.One as One
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
 
@@ -31,6 +34,7 @@ type LocalCookingParams siteLinks userDetails eff =
   , windowSizeSignal  :: IxSignal eff WindowSize
   , authTokenSignal   :: IxSignal eff (Maybe AuthToken)
   , userDetailsSignal :: IxSignal eff (Maybe userDetails)
+  , globalErrorQueue  :: One.Queue (write :: WRITE) eff GlobalError
   }
 
 
