@@ -1,9 +1,9 @@
 module LocalCooking.Spec.Dialogs.PrivacyPolicy where
 
-import LocalCooking.Spec.Dialogs.Generic (genericDialog)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Links.Internal (PolicyLinks (..))
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
+import Components.Dialog.Generic (genericDialog)
 
 import Prelude
 import Data.URI.URI (print) as URI
@@ -44,7 +44,6 @@ privacyPolicyDialog
   { privacyPolicyDialogQueue
   } =
   genericDialog
-  params
   { dialogQueue: privacyPolicyDialogQueue
   , closeQueue: Nothing
   , dialogSignal: Nothing
@@ -63,4 +62,5 @@ privacyPolicyDialog
     , obtain: \_ -> pure (Just unit)
     , reset: pure unit
     }
+  , windowSizeSignal: params.windowSizeSignal
   }

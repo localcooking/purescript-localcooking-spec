@@ -1,21 +1,22 @@
 module LocalCooking.Spec.Content.Register where
 
-import LocalCooking.Spec.Common.Pending (pending)
-import LocalCooking.Spec.Common.Form.Email (EmailState (..), email) as Email
-import LocalCooking.Spec.Common.Form.Password as Password
-import LocalCooking.Spec.Common.Form.Submit as Submit
-import LocalCooking.Spec.Common.Form.ReCaptcha (reCaptcha)
 import LocalCooking.Spec.Misc.Social (mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
+import LocalCooking.Spec.FormData
+  (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataRegister))
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error (GlobalError (GlobalErrorRegister))
 import LocalCooking.Dependencies.Common (RegisterSparrowClientQueues)
 import LocalCooking.Semantics.Common (Register (..), SocialLoginForm (..))
-import LocalCooking.Common.User.Password (hashPassword)
 import Google.ReCaptcha (ReCaptchaResponse)
-import Facebook.State (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataRegister))
+import Components.Misc.Pending (pending)
+import Components.Form.Email (EmailState (..), email) as Email
+import Components.Form.Password as Password
+import Components.Form.Submit as Submit
+import Components.Form.ReCaptcha (reCaptcha)
 
 import Prelude
+import Data.Password (hashPassword)
 import Data.Maybe (Maybe (..))
 import Data.UUID (GENUUID)
 import Data.URI.Location (class ToLocation)

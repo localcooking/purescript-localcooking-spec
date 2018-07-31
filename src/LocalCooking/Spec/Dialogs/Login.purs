@@ -1,8 +1,5 @@
 module LocalCooking.Spec.Dialogs.Login where
 
-import LocalCooking.Spec.Dialogs.Generic (genericDialog)
-import LocalCooking.Spec.Common.Form.Email as Email
-import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Misc.Social (mkSocialFab)
 import LocalCooking.Thermite.Params (LocalCookingParams)
@@ -14,14 +11,17 @@ import LocalCooking.Global.Error
 import LocalCooking.Dependencies.Validate (PasswordVerifyUnauthSparrowClientQueues)
 import LocalCooking.Semantics.Validate (PasswordVerifyUnauth (..))
 import LocalCooking.Semantics.User (UserExists (..))
+import LocalCooking.Semantics.Common (Login (..))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Global.Links.Class (registerLink, class LocalCookingSiteLinks)
-import LocalCooking.Common.User.Password (hashPassword)
-import LocalCooking.Semantics.Common (Login (..))
 import Facebook.Call (FacebookLoginLink (..))
 import Facebook.State (FacebookLoginState (..))
+import Components.Dialog.Generic (genericDialog)
+import Components.Form.Email as Email
+import Components.Form.Password as Password
 
 import Prelude
+import Data.Password (hashPassword)
 import Data.Maybe (Maybe (..))
 import Data.URI.URI (print) as URI
 import Data.URI.Location (class ToLocation, toLocation)
@@ -84,7 +84,6 @@ loginDialog
   , env: {facebookClientId, salt}
   } =
   genericDialog
-  params
   { dialogQueue: loginDialogQueue
   , closeQueue: Just loginCloseQueue
   , dialogSignal: Nothing
@@ -185,6 +184,7 @@ loginDialog
       IxSignal.set (Email.EmailPartial "") emailSignal
       IxSignal.set "" passwordSignal
     }
+  , windowSizeSignal: params.windowSizeSignal
   }
   where
     emailSignal = unsafePerformEff $ IxSignal.make $ Email.EmailPartial ""

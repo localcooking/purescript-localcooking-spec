@@ -1,11 +1,10 @@
 module LocalCooking.Spec.Common.Form.TagSearch where
 
--- import LocalCooking.Common.Tag.Diet (DietTag (..))
 import LocalCooking.Spec.Tag (tag, AnyTag)
-import LocalCooking.Spec.Common.Form.Search as Search
-import LocalCooking.Spec.Common.Form.SearchResults as SearchResults
-import LocalCooking.Spec.Common.Form.Decisions as Decisions
-import LocalCooking.Spec.Common.Form.Submit as Submit
+import Components.Form.Search as Search
+import Components.Form.SearchResults as SearchResults
+import Components.Form.Decisions as Decisions
+import Components.Form.Submit as Submit
 
 import Prelude
 import Data.UUID (GENUUID)

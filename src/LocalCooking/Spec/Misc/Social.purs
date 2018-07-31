@@ -1,11 +1,12 @@
 module LocalCooking.Spec.Misc.Social where
 
 import LocalCooking.Spec.Types.Env (Env)
+import LocalCooking.Spec.FormData (FacebookLoginUnsavedFormData)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Semantics.Common (SocialLoginForm (..))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import Facebook.Types (FacebookClientId)
-import Facebook.State (FacebookLoginUnsavedFormData, FacebookLoginState (..))
+import Facebook.State (FacebookLoginState (..))
 import Facebook.Call (FacebookLoginLink (..), facebookLoginLinkToURI)
 
 import Prelude
@@ -29,7 +30,9 @@ import IxSignal.Internal as IxSignal
 
 -- | For social logins
 mkSocialFab :: FacebookClientId -> String -> String -> R.ReactElement
-            -> Boolean -> Maybe FacebookLoginLink -> R.ReactElement
+            -> Boolean
+            -> Maybe (FacebookLoginLink FacebookLoginUnsavedFormData)
+            -> R.ReactElement
 mkSocialFab facebookClientId mainColor darkColor icon hasValue mLink =
   Button.withStyles
     (\theme ->

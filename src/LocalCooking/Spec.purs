@@ -16,9 +16,9 @@ import LocalCooking.Dependencies (DependenciesQueues)
 import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Dependencies.Common (UserInitIn, UserDeltaIn)
 import LocalCooking.Semantics.Common (Login)
-import LocalCooking.Common.User.Password (HashedPassword)
 
 import Prelude
+import Data.Password (HashedPassword)
 import Data.URI.Location (Location, class ToLocation)
 import Data.UUID (GENUUID)
 import Data.Maybe (Maybe)

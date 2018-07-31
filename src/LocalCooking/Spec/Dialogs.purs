@@ -8,12 +8,12 @@ import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Semantics.Common (Login)
 import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
-import LocalCooking.Common.User.Password (HashedPassword)
 import LocalCooking.Dependencies.Validate
   ( PasswordVerifyUnauthSparrowClientQueues
   , PasswordVerifySparrowClientQueues)
 
 import Prelude
+import Data.Password (HashedPassword)
 import Data.Maybe (Maybe)
 import Data.UUID (GENUUID)
 import Data.URI.Location (class ToLocation)

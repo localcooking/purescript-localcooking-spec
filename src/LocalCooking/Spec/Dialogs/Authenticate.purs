@@ -1,7 +1,5 @@
 module LocalCooking.Spec.Dialogs.Authenticate where
 
-import LocalCooking.Spec.Dialogs.Generic (genericDialog)
-import LocalCooking.Spec.Common.Form.Password as Password
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error
@@ -9,11 +7,13 @@ import LocalCooking.Global.Error
   , AuthTokenFailure (AuthLoginFailure, AuthTokenInternalError)
   , ErrorCode (UserUserDoesntExist))
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
-import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.Validate (PasswordVerifySparrowClientQueues)
 import LocalCooking.Semantics.User (UserExists (..))
+import Components.Dialog.Generic (genericDialog)
+import Components.Form.Password as Password
 
 import Prelude
+import Data.Password (HashedPassword, hashPassword)
 import Data.Maybe (Maybe (..))
 import Data.UUID (genUUID, GENUUID)
 import Data.URI.Location (class ToLocation)
@@ -67,7 +67,6 @@ authenticateDialog
   , env
   } =
   genericDialog
-  params
   { dialogQueue: authenticateDialogQueue
   , closeQueue: Nothing
   , dialogSignal: Nothing
@@ -126,6 +125,7 @@ authenticateDialog
     , reset: do
       IxSignal.set "" passwordSignal
     }
+  , windowSizeSignal: params.windowSizeSignal
   }
   where
     passwordSignal = unsafePerformEff $ IxSignal.make ""

@@ -8,12 +8,9 @@
   ],
   "dependencies": {
     "purescript-prelude": "^3.2.0",
-    "purescript-material-ui": "git://github.com/athanclark/purescript-material-ui.git#9857bf8ae96348bcfe50c77c58797789831be605",
-    "purescript-localcooking-dependencies": "git@git.localcooking.com:localcooking/purescript-localcooking-dependencies.git#dd5cf5b81022e432e713a3cfea550fd91cd578a7",
-    "purescript-react": "^5.1.0",
+    "purescript-material-ui-dialog": "git@git.localcooking.com:template/purescript-material-ui-dialog.git#a091733f602f9730de2afe888db002f6d1ade001",
+    "purescript-localcooking-dependencies": "git@git.localcooking.com:localcooking/purescript-localcooking-dependencies.git#b3737a55f3fc263df65cb7f2ea500afb3b17d52c",
     "purescript-webstorage": "^4.0.0",
-    "purescript-thermite": "git://github.com/jvliwanag/purescript-thermite.git#94299d6832d92f14bef029f35d07bd5e8b062e05",
-    "purescript-react-queue": "^0.0.8",
     "purescript-console": "^3.0.0"
   },
   "devDependencies": {

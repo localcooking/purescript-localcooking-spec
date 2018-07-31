@@ -1,9 +1,9 @@
 module LocalCooking.Spec.Types.Env where
 
-import LocalCooking.Common.User.Password (HashedPassword)
 import Facebook.Types (FacebookClientId)
 import Google.ReCaptcha (ReCaptchaSiteKey)
 
+import Data.Password (HashedPassword)
 
 
 -- FIXME why is preliminary in env? It should only exist once during boot

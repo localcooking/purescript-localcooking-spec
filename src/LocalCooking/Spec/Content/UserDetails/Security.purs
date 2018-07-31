@@ -1,21 +1,22 @@
 module LocalCooking.Spec.Content.UserDetails.Security where
 
-import LocalCooking.Spec.Common.Pending (pending)
-import LocalCooking.Spec.Common.Form.Email (EmailState (..), email) as Email
-import LocalCooking.Spec.Common.Form.Password as Password
-import LocalCooking.Spec.Common.Form.Submit as Submit
 import LocalCooking.Spec.Misc.Social (mkSocialLogin)
 import LocalCooking.Spec.Types.Env (Env)
+import LocalCooking.Spec.FormData
+  (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataSecurity))
 import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 import LocalCooking.Global.User.Class (class UserDetails, getUser)
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
-import LocalCooking.Common.User.Password (HashedPassword, hashPassword)
 import LocalCooking.Dependencies.Common (UserDeltaIn (UserDeltaInSetUser))
 import LocalCooking.Semantics.Common (User (..), SetUser (..), SocialLoginForm, ChangePassword (..))
-import Facebook.State (FacebookLoginUnsavedFormData (FacebookLoginUnsavedFormDataSecurity))
+import Components.Misc.Pending (pending)
+import Components.Form.Email (EmailState (..), email) as Email
+import Components.Form.Password as Password
+import Components.Form.Submit as Submit
 
 import Prelude
+import Data.Password (HashedPassword, hashPassword)
 import Data.Maybe (Maybe (..))
 import Data.URI.Location (class ToLocation)
 import Data.UUID (GENUUID)
