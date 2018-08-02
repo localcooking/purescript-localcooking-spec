@@ -5,8 +5,8 @@ import LocalCooking.Global.Links.Class
 import LocalCooking.Global.User.Class
   (class UserDetails, getUser)
 import LocalCooking.Semantics.Common (Login, User (..))
-import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn (AuthTokenInitInLogin))
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingState, LocalCookingAction, initLocalCookingState, performActionLocalCooking, whileMountedLocalCooking)
+import Auth.AccessToken.Session (SessionTokenInitIn (SessionTokenInitInLogin))
 
 import Prelude
 import Data.URI.URI (print) as URI
@@ -76,7 +76,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
      => UserDetails userDetails
      => LocalCookingParams siteLinks userDetails (Effects eff)
      -> { loginDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
-        , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit
+        , sessionTokenInitIn :: SessionTokenInitIn Login -> Eff (Effects eff) Unit
         , mobileMenuButtonTrigger :: Queue (write :: WRITE) (Effects eff) Unit
         , imageSrc :: Location
         , buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
@@ -87,7 +87,7 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
 spec
   params
   { loginDialogQueue
-  , authTokenInitIn
+  , sessionTokenInitIn
   , mobileMenuButtonTrigger
   , imageSrc
   , buttons
@@ -99,7 +99,7 @@ spec
         liftEff $ log $ "Got login data from dialog: " <> show mLogin
         case mLogin of
           Nothing -> pure unit
-          Just login -> liftEff $ authTokenInitIn $ AuthTokenInitInLogin login
+          Just login -> liftEff $ sessionTokenInitIn $ SessionTokenInitInLogin login
       ClickedMobileMenuButton -> liftEff (putQueue mobileMenuButtonTrigger unit)
       Clicked x -> liftEff (params.siteLinks x)
       LocalCookingAction a -> performActionLocalCooking getLCState a props state
@@ -163,7 +163,7 @@ topbar :: forall eff siteLinks userDetailsLinks userDetails
        => UserDetails userDetails
        => LocalCookingParams siteLinks userDetails (Effects eff)
        -> { loginDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Login)
-          , authTokenInitIn :: AuthTokenInitIn -> Eff (Effects eff) Unit
+          , sessionTokenInitIn :: SessionTokenInitIn Login -> Eff (Effects eff) Unit
           , mobileMenuButtonTrigger :: Queue (write :: WRITE) (Effects eff) Unit
           , imageSrc :: Location
           , buttons :: LocalCookingParams siteLinks userDetails (Effects eff)
@@ -173,7 +173,7 @@ topbar :: forall eff siteLinks userDetailsLinks userDetails
 topbar
   params
   { loginDialogQueue
-  , authTokenInitIn
+  , sessionTokenInitIn
   , mobileMenuButtonTrigger
   , imageSrc
   , buttons
@@ -182,7 +182,7 @@ topbar
         ( spec
           params
           { loginDialogQueue
-          , authTokenInitIn
+          , sessionTokenInitIn
           , mobileMenuButtonTrigger
           , imageSrc
           , buttons

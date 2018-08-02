@@ -13,9 +13,9 @@ import LocalCooking.Spec.Snackbar (messages)
 import LocalCooking.Spec.Drawers.LeftMenu (leftMenu)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Dependencies (DependenciesQueues)
-import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn)
 import LocalCooking.Dependencies.Common (UserInitIn, UserDeltaIn)
 import LocalCooking.Semantics.Common (Login)
+import Auth.AccessToken.Session (SessionTokenInitIn, SessionTokenDeltaIn)
 
 import Prelude
 import Data.Password (HashedPassword)
@@ -109,8 +109,8 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
      -> { env                 :: Env
         , globalErrorQueue    :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
         , dependenciesQueues  :: DependenciesQueues (Effects eff)
-        , authTokenInitIn     :: AuthTokenInitIn -> Eff (Effects eff) Unit
-        , authTokenDeltaIn    :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
+        , sessionTokenInitIn     :: SessionTokenInitIn Login -> Eff (Effects eff) Unit
+        , sessionTokenDeltaIn    :: SessionTokenDeltaIn -> Eff (Effects eff) Unit
         , userInitIn          :: UserInitIn -> Eff (Effects eff) Unit
         , userDeltaIn         :: UserDeltaIn -> Eff (Effects eff) Unit
         -- FIXME ambiguate dependencies APIs
@@ -124,8 +124,8 @@ spec
   { env
   , globalErrorQueue
   , dependenciesQueues
-  , authTokenInitIn
-  , authTokenDeltaIn
+  , sessionTokenInitIn
+  , sessionTokenDeltaIn
   , userInitIn
   , userDeltaIn
   , dialogQueues
@@ -139,7 +139,7 @@ spec
       [ topbar
         params
         { loginDialogQueue: dialogQueues.login.openQueue
-        , authTokenInitIn
+        , sessionTokenInitIn
         , mobileMenuButtonTrigger: writeOnly mobileMenuButtonTrigger
         , imageSrc: templateArgs.topbar.imageSrc
         , buttons: templateArgs.topbar.buttons
@@ -149,8 +149,8 @@ spec
         { env
         , globalErrorQueue
         , dependenciesQueues
-        , authTokenInitIn
-        , authTokenDeltaIn
+        , sessionTokenInitIn
+        , sessionTokenDeltaIn
         , userDeltaIn
         , dialogQueues
         , templateArgs:
@@ -217,9 +217,9 @@ app :: forall eff siteLinks userDetailsLinks userDetails
            }
          }
        , dependenciesQueues :: DependenciesQueues (Effects eff)
-       -- FIXME TODO restrict authTokenQueues from being visible
-       , authTokenInitIn  :: AuthTokenInitIn -> Eff (Effects eff) Unit
-       , authTokenDeltaIn :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
+       -- FIXME TODO restrict sessionTokenQueues from being visible
+       , sessionTokenInitIn  :: SessionTokenInitIn Login -> Eff (Effects eff) Unit
+       , sessionTokenDeltaIn :: SessionTokenDeltaIn -> Eff (Effects eff) Unit
        , userInitIn       :: UserInitIn -> Eff (Effects eff) Unit
        , userDeltaIn      :: UserDeltaIn -> Eff (Effects eff) Unit
        , templateArgs     :: TemplateArgs (Effects eff) siteLinks userDetails
@@ -233,8 +233,8 @@ app
   , globalErrorQueue
   , dialogQueues
   , dependenciesQueues
-  , authTokenInitIn
-  , authTokenDeltaIn
+  , sessionTokenInitIn
+  , sessionTokenDeltaIn
   , userInitIn
   , userDeltaIn
   , templateArgs
@@ -246,8 +246,8 @@ app
           { env
           , globalErrorQueue
           , dependenciesQueues
-          , authTokenInitIn
-          , authTokenDeltaIn
+          , sessionTokenInitIn
+          , sessionTokenDeltaIn
           , userInitIn
           , userDeltaIn
           , dialogQueues:

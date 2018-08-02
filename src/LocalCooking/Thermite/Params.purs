@@ -1,7 +1,7 @@
 module LocalCooking.Thermite.Params where
 
 import LocalCooking.Global.Error (GlobalError)
-import LocalCooking.Common.AccessToken.Auth (AuthToken)
+import Auth.AccessToken.Session (SessionToken)
 
 import Prelude
 import Data.Maybe (Maybe)
@@ -28,22 +28,22 @@ import Thermite as T
 
 -- | Universal arguments for each React component process
 type LocalCookingParams siteLinks userDetails eff =
-  { toURI             :: Location -> URI
-  , siteLinks         :: siteLinks -> Eff eff Unit
-  , currentPageSignal :: IxSignal eff siteLinks
-  , windowSizeSignal  :: IxSignal eff WindowSize
-  , authTokenSignal   :: IxSignal eff (Maybe AuthToken)
-  , userDetailsSignal :: IxSignal eff (Maybe userDetails)
-  , globalErrorQueue  :: One.Queue (write :: WRITE) eff GlobalError
+  { toURI              :: Location -> URI
+  , siteLinks          :: siteLinks -> Eff eff Unit
+  , currentPageSignal  :: IxSignal eff siteLinks
+  , windowSizeSignal   :: IxSignal eff WindowSize
+  , sessionTokenSignal :: IxSignal eff (Maybe SessionToken)
+  , userDetailsSignal  :: IxSignal eff (Maybe userDetails)
+  , globalErrorQueue   :: One.Queue (write :: WRITE) eff GlobalError
   }
 
 
 -- | Storable state for each Thermite action schema
 type LocalCookingState siteLinks userDetails =
-  { currentPage :: siteLinks
-  , windowSize  :: WindowSize
-  , authToken   :: Maybe AuthToken
-  , userDetails :: Maybe userDetails
+  { currentPage  :: siteLinks
+  , windowSize   :: WindowSize
+  , sessionToken :: Maybe SessionToken
+  , userDetails  :: Maybe userDetails
   }
 
 -- | View-only data components
@@ -58,11 +58,11 @@ showLocalCookingState :: forall siteLinks userDetails
                       => Show userDetails
                       => LocalCookingState siteLinks userDetails
                       -> String
-showLocalCookingState {currentPage,windowSize,authToken,userDetails} =
+showLocalCookingState {currentPage,windowSize,sessionToken,userDetails} =
   unlines
   [ "{ currentPage: " <> show currentPage
   , ", windowSize: " <> show windowSize
-  , ", authToken: " <> show authToken
+  , ", sessionToken: " <> show sessionToken
   , ", userDetails: " <> show userDetails
   , "}"
   ]
@@ -84,15 +84,15 @@ showLocalCookingStateLight {currentPage,windowSize} =
 initLocalCookingState :: forall siteLinks userDetails eff
                        . LocalCookingParams siteLinks userDetails (ref :: REF | eff)
                       -> Eff (ref :: REF | eff) (LocalCookingState siteLinks userDetails)
-initLocalCookingState {currentPageSignal,windowSizeSignal,authTokenSignal,userDetailsSignal} = do
+initLocalCookingState {currentPageSignal,windowSizeSignal,sessionTokenSignal,userDetailsSignal} = do
   currentPage <- IxSignal.get currentPageSignal
   windowSize <- IxSignal.get windowSizeSignal
-  authToken <- IxSignal.get authTokenSignal
+  sessionToken <- IxSignal.get sessionTokenSignal
   userDetails <- IxSignal.get userDetailsSignal
   pure
     { currentPage
     , windowSize
-    , authToken
+    , sessionToken
     , userDetails
     }
 
@@ -112,7 +112,7 @@ initLocalCookingStateLight {currentPageSignal,windowSizeSignal} = do
 data LocalCookingAction siteLinks userDetails
   = ChangedCurrentPage siteLinks
   | ChangedWindowSize WindowSize
-  | ChangedAuthToken (Maybe AuthToken)
+  | ChangedSessionToken (Maybe SessionToken)
   | ChangedUserDetails (Maybe userDetails)
 
 derive instance genericLocalCookingAction :: (Generic siteLinks, Generic userDetails) => Generic (LocalCookingAction siteLinks userDetails)
@@ -147,7 +147,7 @@ performActionLocalCooking getLCState a props state =
       go = case a of
         ChangedCurrentPage x -> _ { currentPage = x }
         ChangedWindowSize x -> _ { windowSize = x }
-        ChangedAuthToken x -> _ { authToken = x }
+        ChangedSessionToken x -> _ { sessionToken = x }
         ChangedUserDetails x -> _ { userDetails = x }
   in  void (T.cotransform (getLCState %~ go))
 
@@ -176,7 +176,7 @@ whileMountedLocalCooking :: forall siteLinks userDetails eff state action props 
 whileMountedLocalCooking
   { currentPageSignal
   , windowSizeSignal
-  , authTokenSignal
+  , sessionTokenSignal
   , userDetailsSignal
   }
   k
@@ -192,9 +192,9 @@ whileMountedLocalCooking
       k
       (\this x -> dispatcher this (buildLCAction (ChangedWindowSize x)))
   $ Signal.whileMountedIx
-      authTokenSignal
+      sessionTokenSignal
       k
-      (\this x -> dispatcher this (buildLCAction (ChangedAuthToken x)))
+      (\this x -> dispatcher this (buildLCAction (ChangedSessionToken x)))
   $ Signal.whileMountedIx
       userDetailsSignal
       k

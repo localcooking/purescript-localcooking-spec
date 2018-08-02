@@ -3,14 +3,15 @@ module LocalCooking.Spec.Dialogs.Authenticate where
 import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error
-  ( GlobalError (GlobalErrorAuthFailure, GlobalErrorCode)
-  , AuthTokenFailure (AuthLoginFailure, AuthTokenInternalError)
-  , ErrorCode (UserUserDoesntExist))
+  ( GlobalError (GlobalErrorSessionFailure, GlobalErrorCode)
+  , ErrorCode (UserUserDoesntExist)
+  , LoginError (LoginBadPassword))
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks)
 import LocalCooking.Dependencies.Validate (PasswordVerifySparrowClientQueues)
 import LocalCooking.Semantics.User (UserExists (..))
 import Components.Dialog.Generic (genericDialog)
 import Components.Form.Password as Password
+import Auth.AccessToken.Session (SessionTokenFailure (SessionLoginFailure, SessionTokenInternalError))
 
 import Prelude
 import Data.Password (HashedPassword, hashPassword)
@@ -60,7 +61,7 @@ authenticateDialog :: forall eff siteLinks userDetails userDetailsLinks
                       }
                    -> R.ReactElement
 authenticateDialog
-  params@{authTokenSignal}
+  params@{sessionTokenSignal}
   { authenticateDialogQueue
   , passwordVerifyQueues
   , globalErrorQueue
@@ -96,15 +97,15 @@ authenticateDialog
             }
           ]
     , obtain: \_ -> do
-      mAuthToken <- liftEff (IxSignal.get authTokenSignal)
-      case mAuthToken of
+      mSessionToken <- liftEff (IxSignal.get sessionTokenSignal)
+      case mSessionToken of
         Nothing -> pure Nothing
-        Just authToken -> do
+        Just sessionToken -> do
           pw <- liftEff (IxSignal.get passwordSignal)
           hashedPassword <- liftBase (hashPassword {salt: env.salt, password: pw})
           mVerify <- OneIO.callAsync
             passwordVerifyQueues
-            (JSONTuple authToken hashedPassword)
+            (JSONTuple sessionToken hashedPassword)
           case mVerify of
             Just mExists -> liftEff $ case mExists of
               UserDoesntExist -> do
@@ -114,12 +115,12 @@ authenticateDialog
                 if isCorrect
                   then pure (Just hashedPassword)
                   else do
-                    One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthLoginFailure)
+                    One.putQueue globalErrorQueue $ GlobalErrorSessionFailure $ SessionLoginFailure LoginBadPassword
                     One.putQueue passwordErrorQueue unit
                     pure Nothing
             Nothing -> do
               liftEff $ do
-                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthTokenInternalError)
+                One.putQueue globalErrorQueue (GlobalErrorSessionFailure SessionTokenInternalError)
                 One.putQueue passwordErrorQueue unit
               pure Nothing
     , reset: do

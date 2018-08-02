@@ -155,7 +155,7 @@ spec
             void $ T.cotransform _ {user = Just $ User $ u {socialLogin = socialLogin}}
       SubmitSecurity -> do
         liftEff $ IxSignal.set true pendingSignal
-        authToken <- liftBase $ getAvailable params.authTokenSignal
+        sessionToken <- liftBase $ getAvailable params.sessionTokenSignal
         mEmail <- do
           mX <- liftEff $ IxSignal.get email.signal
           pure $ case mX of
@@ -392,16 +392,16 @@ security
             (\this -> unsafeCoerceEff <<< dispatcher this)
             reactSpec
               -- { componentDidMount = \this -> do
-              --     let getUserData authToken =
+              --     let getUserData sessionToken =
               --           unsafeCoerceEff $ OneIO.callAsyncEff getUserQueues
               --             (\mUser -> case mUser of
               --               Nothing -> pure unit
               --               Just u -> unsafeCoerceEff $ dispatcher this $ GotUser u
               --             )
-              --             (AccessInitIn {token: authToken, subj: JSONUnit})
+              --             (AccessInitIn {token: sessionToken, subj: JSONUnit})
               --     unsafeCoerceEff $ onAvailable
               --       getUserData
-              --       params.authTokenSignal
+              --       params.sessionTokenSignal
               --     reactSpec.componentDidMount this
               -- }
   in  R.createElement (R.createClass reactSpec') unit []

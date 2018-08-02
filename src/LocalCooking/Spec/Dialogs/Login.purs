@@ -4,14 +4,14 @@ import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Misc.Social (mkSocialFab)
 import LocalCooking.Thermite.Params (LocalCookingParams)
 import LocalCooking.Global.Error
-  ( GlobalError (GlobalErrorAuthFailure, GlobalErrorCode)
-  , AuthTokenFailure (AuthLoginFailure, AuthTokenInternalError)
+  ( GlobalError (GlobalErrorSessionFailure, GlobalErrorCode)
   , ErrorCode (UserUserDoesntExist)
+  , LoginError (LoginBadPassword)
   )
 import LocalCooking.Dependencies.Validate (PasswordVerifyUnauthSparrowClientQueues)
 import LocalCooking.Semantics.Validate (PasswordVerifyUnauth (..))
 import LocalCooking.Semantics.User (UserExists (..))
-import LocalCooking.Semantics.Common (Login (..))
+import LocalCooking.Semantics.Common (Login (EmailLogin))
 import LocalCooking.Global.Links.External (ThirdPartyLoginReturnLinks (..))
 import LocalCooking.Global.Links.Class (registerLink, class LocalCookingSiteLinks)
 import Facebook.Call (FacebookLoginLink (..))
@@ -19,6 +19,7 @@ import Facebook.State (FacebookLoginState (..))
 import Components.Dialog.Generic (genericDialog)
 import Components.Form.Email as Email
 import Components.Form.Password as Password
+import Auth.AccessToken.Session (SessionTokenFailure (SessionLoginFailure, SessionTokenInternalError))
 
 import Prelude
 import Data.Password (hashPassword)
@@ -167,14 +168,14 @@ loginDialog
                 pure Nothing
               UserExists isCorrect ->
                 if isCorrect
-                  then pure $ Just $ Login {email,password: hashedPassword}
+                  then pure $ Just $ EmailLogin {email,password: hashedPassword}
                   else do
-                    One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthLoginFailure)
+                    One.putQueue globalErrorQueue $ GlobalErrorSessionFailure $ SessionLoginFailure LoginBadPassword
                     One.putQueue passwordErrorQueue unit
                     pure Nothing
             Nothing -> do
               liftEff $ do
-                One.putQueue globalErrorQueue (GlobalErrorAuthFailure AuthTokenInternalError)
+                One.putQueue globalErrorQueue (GlobalErrorSessionFailure SessionTokenInternalError)
                 One.putQueue passwordErrorQueue unit
               pure Nothing
         _ -> do

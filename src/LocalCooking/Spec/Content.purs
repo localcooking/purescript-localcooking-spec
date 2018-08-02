@@ -8,11 +8,12 @@ import LocalCooking.Spec.Types.Env (Env)
 import LocalCooking.Spec.Dialogs (AllDialogs)
 import LocalCooking.Thermite.Params (LocalCookingParams, LocalCookingStateLight, initLocalCookingStateLight, performActionLocalCookingLight, LocalCookingActionLight, whileMountedLocalCookingLight)
 import LocalCooking.Dependencies (DependenciesQueues)
-import LocalCooking.Dependencies.AuthToken (AuthTokenInitIn, AuthTokenDeltaIn (AuthTokenDeltaInLogout))
 import LocalCooking.Dependencies.Common (UserDeltaIn)
+import LocalCooking.Semantics.Common (Login)
 import LocalCooking.Global.Error (GlobalError)
 import LocalCooking.Global.User.Class (class UserDetails)
 import LocalCooking.Global.Links.Class (class LocalCookingSiteLinks, getUserDetailsLink, userDetailsLink, userDetailsGeneralLink, userDetailsSecurityLink, registerLink)
+import Auth.AccessToken.Session (SessionTokenInitIn, SessionTokenDeltaIn (SessionTokenDeltaInLogout))
 
 import Prelude
 import Data.UUID (GENUUID)
@@ -89,8 +90,8 @@ spec :: forall eff siteLinks userDetailsLinks userDetails
      -> { env                :: Env
         , globalErrorQueue   :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
         , dependenciesQueues :: DependenciesQueues (Effects eff)
-        , authTokenInitIn    :: AuthTokenInitIn -> Eff (Effects eff) Unit
-        , authTokenDeltaIn   :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
+        , sessionTokenInitIn    :: SessionTokenInitIn Login -> Eff (Effects eff) Unit
+        , sessionTokenDeltaIn   :: SessionTokenDeltaIn -> Eff (Effects eff) Unit
         , userDeltaIn        :: UserDeltaIn -> Eff (Effects eff) Unit
         , dialogQueues :: AllDialogs (Effects eff)
         , templateArgs ::
@@ -118,8 +119,8 @@ spec
   { env
   , globalErrorQueue
   , dependenciesQueues
-  , authTokenInitIn
-  , authTokenDeltaIn
+  , sessionTokenInitIn
+  , sessionTokenDeltaIn
   , userDeltaIn
   , dialogQueues
   , templateArgs
@@ -199,7 +200,7 @@ spec
                         ( listItem
                           { button: true
                           , onClick: mkEffFn1 \_ -> unsafeCoerceEff
-                                                  $ authTokenDeltaIn AuthTokenDeltaInLogout -- pure unit -- dispatch Logout
+                                                  $ sessionTokenDeltaIn SessionTokenDeltaInLogout -- pure unit -- dispatch Logout
                             -- FIXME feels weird - shouldn't this be its own sidebar component?
                           }
                           [ listItemText
@@ -292,10 +293,10 @@ content :: forall eff siteLinks userDetailsLinks userDetails
         => LocalCookingParams siteLinks userDetails (Effects eff)
         -> { env                :: Env
            , globalErrorQueue   :: One.Queue (read :: READ, write :: WRITE) (Effects eff) GlobalError
-           -- FIXME TODO restrict authTokenQueues from being visible
+           -- FIXME TODO restrict sessionTokenQueues from being visible
            , dependenciesQueues :: DependenciesQueues (Effects eff)
-           , authTokenInitIn    :: AuthTokenInitIn -> Eff (Effects eff) Unit
-           , authTokenDeltaIn   :: AuthTokenDeltaIn -> Eff (Effects eff) Unit
+           , sessionTokenInitIn    :: SessionTokenInitIn Login -> Eff (Effects eff) Unit
+           , sessionTokenDeltaIn   :: SessionTokenDeltaIn -> Eff (Effects eff) Unit
            , userDeltaIn        :: UserDeltaIn -> Eff (Effects eff) Unit
            , dialogQueues :: AllDialogs (Effects eff)
            , templateArgs ::
@@ -323,8 +324,8 @@ content
   { env
   , globalErrorQueue
   , dependenciesQueues
-  , authTokenInitIn
-  , authTokenDeltaIn
+  , sessionTokenInitIn
+  , sessionTokenDeltaIn
   , userDeltaIn
   , dialogQueues
   , templateArgs
@@ -336,8 +337,8 @@ content
           { env
           , globalErrorQueue
           , dependenciesQueues
-          , authTokenInitIn
-          , authTokenDeltaIn
+          , sessionTokenInitIn
+          , sessionTokenDeltaIn
           , userDeltaIn
           , dialogQueues
           , templateArgs
