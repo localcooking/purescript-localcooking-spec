@@ -18,6 +18,7 @@ import MaterialUI.Input as Input
 import MaterialUI.Form (formControl)
 
 import Unsafe.Coerce (unsafeCoerce)
+import Signal.Types (READ, WRITE, readOnly) as S
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
 import Queue.Types (READ, WRITE, allowWriting, allowReading)
@@ -50,7 +51,7 @@ type Effects eff =
 
 
 spec :: forall eff
-      . { blogPostPrioritySignal :: IxSignal (Effects eff) BlogPostPriority
+      . { blogPostPrioritySignal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) BlogPostPriority
         , updatedQueue           :: IxQueue (read :: READ) (Effects eff) Unit
         , label                  :: R.ReactElement
         , fullWidth              :: Boolean
@@ -100,7 +101,7 @@ blogPostPriority :: forall eff
         , fullWidth              :: Boolean
         , id                     :: String
         , updatedQueue           :: IxQueue (read :: READ) (Effects eff) Unit
-        , blogPostPrioritySignal :: IxSignal (Effects eff) BlogPostPriority
+        , blogPostPrioritySignal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) BlogPostPriority
         , setQueue               :: One.Queue (write :: WRITE) (Effects eff) BlogPostPriority
         } -> R.ReactElement
 blogPostPriority {label,fullWidth,id,updatedQueue,blogPostPrioritySignal,setQueue} =

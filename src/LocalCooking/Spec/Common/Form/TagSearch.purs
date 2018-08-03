@@ -31,6 +31,7 @@ import MaterialUI.Grid (grid)
 import MaterialUI.Grid as Grid
 import MaterialUI.Button as Button
 
+import Signal.Types (READ, WRITE, readOnly) as S
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
 import IxQueue (IxQueue)
@@ -65,12 +66,12 @@ spec :: forall eff tag
      => Show tag
      => { search ::
           { updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
-          , signal :: IxSignal (Effects eff) String
+          , signal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) String
           , setQueue :: One.Queue (write :: WRITE) (Effects eff) String
           }
         , submit ::
           { triggerQueue :: IxQueue (read :: READ) (Effects eff) Unit
-          , disabled :: IxSignal (Effects eff) Boolean
+          , disabled :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Boolean
           }
         , results ::
           { setQueue :: One.Queue (write :: WRITE) (Effects eff) (Array tag)
@@ -78,12 +79,12 @@ spec :: forall eff tag
           , clearQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
           , pendingQueue :: One.Queue (write :: WRITE) (Effects eff) Unit
           , delQueue :: One.Queue (write :: WRITE) (Effects eff) tag
-          , signal :: IxSignal (Effects eff) (SearchResults.SearchResults tag)
+          , signal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) (SearchResults.SearchResults tag)
           }
         , decisions ::
           { addQueue :: One.Queue (write :: WRITE) (Effects eff) tag
           , delQueue :: One.Queue (write :: WRITE) (Effects eff) tag
-          , signal :: IxSignal (Effects eff) (Array tag)
+          , signal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) (Array tag)
           }
         , tagSearch :: String -> Eff (Effects eff) Unit
         , label     :: String
@@ -147,7 +148,7 @@ spec
             , size: Button.medium
             , style: createStyles {}
             , triggerQueue: submit.triggerQueue
-            , disabledSignal: submit.disabled
+            , disabledSignal: S.readOnly submit.disabled
             , fullWidth: true
             } [R.text "Add"]
           ]

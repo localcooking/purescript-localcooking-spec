@@ -42,6 +42,7 @@ import MaterialUI.Button as Button
 import MaterialUI.Divider (divider)
 import Crypto.Scrypt (SCRYPT)
 
+import Signal.Types (READ, WRITE, readOnly) as S
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
 import IxSignal.Extra (getAvailable)
@@ -105,28 +106,28 @@ spec :: forall eff siteLinks userDetails userDetailsLinks
         , authenticateDialogQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe HashedPassword)
         , userDeltaIn             :: UserDeltaIn -> Eff (Effects eff) Unit
         , email ::
-          { signal        :: IxSignal (Effects eff) Email.EmailState
+          { signal        :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
           , setQueue      :: One.Queue (write :: WRITE) (Effects eff) Email.EmailState
           }
         , emailConfirm ::
-          { signal        :: IxSignal (Effects eff) Email.EmailState
+          { signal        :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
           , setQueue      :: One.Queue (write :: WRITE) (Effects eff) Email.EmailState
           }
         , password ::
-          { signal       :: IxSignal (Effects eff) String
+          { signal       :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) String
           , updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
           }
         , passwordConfirm ::
-          { signal       :: IxSignal (Effects eff) String
+          { signal       :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) String
           , updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
           }
         , submit ::
           { queue          :: IxQueue (read :: READ) (Effects eff) Unit
-          , disabledSignal :: IxSignal (Effects eff) Boolean
+          , disabledSignal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Boolean
           }
-        , pendingSignal    :: IxSignal (Effects eff) Boolean
+        , pendingSignal    :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Boolean
         } -> T.Spec (Effects eff) (State siteLinks userDetails) Unit (Action siteLinks userDetails)
 spec
   params
@@ -218,7 +219,7 @@ spec
         , name: "register-email-confirm"
         , id: "register-email-confirm"
         , emailSignal: emailConfirm.signal
-        , parentSignal: Just email.signal
+        , parentSignal: Just (S.readOnly email.signal)
         , updatedQueue: emailConfirm.updatedQueue
         , setQueue: emailConfirm.setQueue
         }
@@ -238,7 +239,7 @@ spec
         , name: "register-password-confirm"
         , id: "register-password-confirm"
         , passwordSignal: passwordConfirm.signal
-        , parentSignal: Just password.signal
+        , parentSignal: Just (S.readOnly password.signal)
         , updatedQueue: passwordConfirm.updatedQueue
         , errorQueue: passwordConfirmErrorQueue
         }
@@ -269,12 +270,12 @@ spec
         , variant: Button.raised
         , size: Button.large
         , style: createStyles {marginTop: "1em"}
-        , disabledSignal: submit.disabledSignal
+        , disabledSignal: S.readOnly submit.disabledSignal
         , triggerQueue: submit.queue
         , fullWidth: false
         } [R.text "Submit"]
       , pending
-        { pendingSignal
+        { pendingSignal: S.readOnly pendingSignal
         }
       ]
       where

@@ -16,6 +16,7 @@ import MaterialUI.TextField (textField)
 import MaterialUI.Input as Input
 
 import Unsafe.Coerce (unsafeCoerce)
+import Signal.Types (READ, WRITE, readOnly) as S
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
 import Queue.Types (READ, WRITE, allowWriting, allowReading)
@@ -48,7 +49,7 @@ type Effects eff =
 
 
 spec :: forall eff
-      . { blogPostCategorySignal :: IxSignal (Effects eff) BlogPostCategory
+      . { blogPostCategorySignal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) BlogPostCategory
         , updatedQueue           :: IxQueue (read :: READ) (Effects eff) Unit
         , label                  :: R.ReactElement
         , fullWidth              :: Boolean
@@ -97,7 +98,7 @@ blogPostCategory :: forall eff
                     , fullWidth              :: Boolean
                     , id                     :: String
                     , updatedQueue           :: IxQueue (read :: READ) (Effects eff) Unit
-                    , blogPostCategorySignal :: IxSignal (Effects eff) BlogPostCategory
+                    , blogPostCategorySignal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) BlogPostCategory
                     , setQueue               :: One.Queue (write :: WRITE) (Effects eff) BlogPostCategory
                     } -> R.ReactElement
 blogPostCategory {label,fullWidth,id,updatedQueue,blogPostCategorySignal,setQueue} =

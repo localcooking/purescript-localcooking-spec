@@ -43,6 +43,7 @@ import MaterialUI.Grid as Grid
 import MaterialUI.Button as Button
 import Crypto.Scrypt (SCRYPT)
 
+import Signal.Types (READ, WRITE, readOnly, writeOnly) as S
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
 import Queue.Types (readOnly, writeOnly, allowWriting, allowReading)
@@ -89,34 +90,34 @@ spec :: forall eff siteLinks userDetails
         , privacyPolicyQueue :: OneIO.IOQueues (Effects eff) Unit (Maybe Unit)
         , env                :: Env
         , email ::
-          { signal        :: IxSignal (Effects eff) Email.EmailState
+          { signal        :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
           , setQueue      :: One.Queue (write :: WRITE) (Effects eff) Email.EmailState
           }
         , emailConfirm ::
-          { signal        :: IxSignal (Effects eff) Email.EmailState
+          { signal        :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Email.EmailState
           , updatedQueue  :: IxQueue (read :: READ) (Effects eff) Unit
           , setQueue      :: One.Queue (write :: WRITE) (Effects eff) Email.EmailState
           }
         , password ::
-          { signal       :: IxSignal (Effects eff) String
+          { signal       :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) String
           , updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
           }
         , passwordConfirm ::
-          { signal       :: IxSignal (Effects eff) String
+          { signal       :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) String
           , updatedQueue :: IxQueue (read :: READ) (Effects eff) Unit
           }
         , submit ::
           { queue          :: IxQueue (read :: READ) (Effects eff) Unit
-          , disabledSignal :: IxSignal (Effects eff) Boolean
+          , disabledSignal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Boolean
           }
         , privacy ::
           { queue          :: IxQueue (read :: READ) (Effects eff) Unit
-          , disabledSignal :: IxSignal (Effects eff) Boolean
+          , disabledSignal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Boolean
           }
-        , reCaptchaSignal :: IxSignal (Effects eff) (Maybe ReCaptchaResponse)
+        , reCaptchaSignal :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) (Maybe ReCaptchaResponse)
           -- FIXME ^
-        , pendingSignal   :: IxSignal (Effects eff) Boolean
+        , pendingSignal   :: IxSignal (read :: S.READ, write :: S.WRITE) (Effects eff) Boolean
         } -> T.Spec (Effects eff) State Unit Action
 spec
   params
@@ -203,7 +204,7 @@ spec
             , name: "register-email-confirm"
             , id: "register-email-confirm"
             , emailSignal: emailConfirm.signal
-            , parentSignal: Just email.signal
+            , parentSignal: Just (S.readOnly email.signal)
             , updatedQueue: emailConfirm.updatedQueue
             , setQueue: emailConfirm.setQueue
             }
@@ -223,7 +224,7 @@ spec
             , name: "register-password-confirm"
             , id: "register-password-confirm"
             , passwordSignal: passwordConfirm.signal
-            , parentSignal: Just password.signal
+            , parentSignal: Just (S.readOnly password.signal)
             , updatedQueue: passwordConfirm.updatedQueue
             , errorQueue: passwordConfirmErrorQueue
             }
@@ -247,7 +248,7 @@ spec
                 }
                 state.socialLogin
           , reCaptcha
-            { reCaptchaSignal
+            { reCaptchaSignal: S.writeOnly reCaptchaSignal
             , reCaptchaSiteKey: env.googleReCaptchaSiteKey
             }
           , Submit.submit
@@ -255,7 +256,7 @@ spec
             , variant: Button.raised
             , size: Button.large
             , style: createStyles {}
-            , disabledSignal: privacy.disabledSignal
+            , disabledSignal: S.readOnly privacy.disabledSignal
             , triggerQueue: privacy.queue
             , fullWidth: false
             } [R.text "Privacy Policy"]
@@ -265,14 +266,14 @@ spec
             , variant: Button.raised
             , size: Button.large
             , style: createStyles {marginTop: "1em"}
-            , disabledSignal: submit.disabledSignal
+            , disabledSignal: S.readOnly submit.disabledSignal
             , triggerQueue: submit.queue
             , fullWidth: false
             } [R.text "Submit"]
           ]
         ]
       , pending
-        { pendingSignal
+        { pendingSignal: S.readOnly pendingSignal
         }
       ]
       where

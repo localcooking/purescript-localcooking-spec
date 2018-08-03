@@ -16,6 +16,7 @@ import Control.Monad.Eff.Ref (REF)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Queue.Types (WRITE)
 import Queue.One as One
+import Signal.Types (READ, WRITE) as S
 import IxSignal.Internal (IxSignal)
 import IxSignal.Internal as IxSignal
 
@@ -30,10 +31,10 @@ import Thermite as T
 type LocalCookingParams siteLinks userDetails eff =
   { toURI              :: Location -> URI
   , siteLinks          :: siteLinks -> Eff eff Unit
-  , currentPageSignal  :: IxSignal eff siteLinks
-  , windowSizeSignal   :: IxSignal eff WindowSize
-  , sessionTokenSignal :: IxSignal eff (Maybe SessionToken)
-  , userDetailsSignal  :: IxSignal eff (Maybe userDetails)
+  , currentPageSignal  :: IxSignal (read :: S.READ) eff siteLinks
+  , windowSizeSignal   :: IxSignal (read :: S.READ) eff WindowSize
+  , sessionTokenSignal :: IxSignal (read :: S.READ) eff (Maybe SessionToken)
+  , userDetailsSignal  :: IxSignal (read :: S.READ) eff (Maybe userDetails)
   , globalErrorQueue   :: One.Queue (write :: WRITE) eff GlobalError
   }
 
